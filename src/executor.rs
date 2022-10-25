@@ -1,4 +1,5 @@
 use crate::RenameParams;
+use human_sort::compare;
 use indicatif::{ProgressBar, ProgressStyle};
 use question::{Answer, Question};
 use std::path::Path;
@@ -26,7 +27,6 @@ pub fn rename(params: &RenameParams) {
     }
 
     for entry in directories {
-        // TODO Sort files with atoi
         let mut files = WalkDir::new(entry.path().to_str().unwrap())
             .max_depth(1)
             .into_iter()
@@ -44,6 +44,13 @@ pub fn rename(params: &RenameParams) {
             })
             .map(|v| v.into_path())
             .collect::<Vec<PathBuf>>();
+
+        // Sort with human-friendly order
+        files.sort_by(|a, b| {
+            let a = a.file_name().unwrap().to_str().unwrap();
+            let b = b.file_name().unwrap().to_str().unwrap();
+            compare(a, b)
+        });
 
         let dir_name = entry.file_name().to_str().unwrap();
         if files.is_empty() {
