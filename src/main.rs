@@ -14,6 +14,8 @@ struct Cli {
 enum Commands {
     /// Rename files in each directory to sequential number
     Rename(params::RenameParams),
+    /// Compress files in each directory
+    Compress(params::CompressParams),
 }
 
 fn main() {
@@ -21,6 +23,9 @@ fn main() {
     match &cli.command {
         Some(Commands::Rename(v)) => {
             executor::rename(v);
+        }
+        Some(Commands::Compress(v)) => {
+            todo!()
         }
         None => panic!("No sub command provided!"),
     }
