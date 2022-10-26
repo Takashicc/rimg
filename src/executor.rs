@@ -1,4 +1,4 @@
-use crate::RenameParams;
+use crate::params::RenameParams;
 use human_sort::compare;
 use indicatif::{ProgressBar, ProgressStyle};
 use question::{Answer, Question};
