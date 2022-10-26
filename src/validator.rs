@@ -35,6 +35,14 @@ pub fn format_type_check(s: &str) -> Result<String, String> {
     }
 }
 
+pub fn extension_check(s: &str) -> Result<String, String> {
+    if s.is_empty() {
+        Err("Empty extension is invalid".to_string())
+    } else {
+        Ok(s.to_owned())
+    }
+}
+
 #[cfg(test)]
 mod tests {
 
@@ -121,6 +129,22 @@ mod tests {
         #[should_panic]
         fn invalid_format_type_should_panic() {
             format_type_check("xxx").unwrap();
+        }
+    }
+
+    mod extension_check {
+        use super::super::*;
+
+        #[test]
+        fn valid_extension_should_return_string() {
+            let result = extension_check("zip").unwrap();
+            assert_eq!("zip", result);
+        }
+
+        #[test]
+        #[should_panic]
+        fn empty_extension_should_panic() {
+            extension_check("").unwrap();
         }
     }
 }
