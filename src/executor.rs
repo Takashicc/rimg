@@ -34,13 +34,14 @@ pub fn rename(params: &RenameParams) {
             .filter(|v| {
                 is_file(v)
                     && !is_hidden(v)
-                    && v.path()
-                        .extension()
-                        .unwrap()
-                        .to_str()
-                        .unwrap()
-                        .to_lowercase()
-                        == params.extension.to_lowercase()
+                    && params.extensions.contains(
+                        &v.path()
+                            .extension()
+                            .unwrap()
+                            .to_str()
+                            .unwrap()
+                            .to_lowercase(),
+                    )
             })
             .map(|v| v.into_path())
             .collect::<Vec<PathBuf>>();
@@ -53,18 +54,17 @@ pub fn rename(params: &RenameParams) {
         });
 
         let dir_name = entry.file_name().to_str().unwrap();
+        let extension_types = params.extensions.join(", ").to_lowercase();
         if files.is_empty() {
             println!(
                 "There are no {} files in {} directory",
-                params.extension.to_uppercase(),
-                dir_name
+                extension_types, dir_name
             );
             continue;
         } else {
             println!(
                 "Renaming {} files in {} directory",
-                params.extension.to_uppercase(),
-                dir_name
+                extension_types, dir_name
             );
         }
 
