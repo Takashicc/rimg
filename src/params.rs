@@ -21,10 +21,11 @@ pub struct RenameParams {
     #[arg(
         short,
         long,
-        default_value_t = String::from("jpg"),
+        default_values = vec!["jpg", "jpeg"],
+        value_parser = validator::extension_check,
         help = "Target file extension"
     )]
-    pub extension: String,
+    pub extensions: Vec<String>,
 
     #[arg(
         short,
