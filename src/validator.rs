@@ -27,6 +27,14 @@ pub fn start_from_zero(s: &str) -> Result<u8, String> {
     Ok(digit)
 }
 
+pub fn format_type_check(s: &str) -> Result<String, String> {
+    if s == "rar" {
+        Ok(s.to_owned())
+    } else {
+        Err(format!("`{}` isn't a valid format type", s))
+    }
+}
+
 #[cfg(test)]
 mod tests {
 
@@ -97,6 +105,22 @@ mod tests {
         fn one_should_return_number() {
             let result = start_from_zero("1").unwrap();
             assert_eq!(1, result);
+        }
+    }
+
+    mod format_type_check {
+        use super::super::*;
+
+        #[test]
+        fn valid_format_type_should_return_string() {
+            let result = format_type_check("rar").unwrap();
+            assert_eq!("rar", result);
+        }
+
+        #[test]
+        #[should_panic]
+        fn invalid_format_type_should_panic() {
+            format_type_check("xxx").unwrap();
         }
     }
 }
