@@ -25,7 +25,7 @@ fn main() {
             executor::rename(v);
         }
         Some(Commands::Compress(v)) => {
-            todo!()
+            executor::compress(v);
         }
         None => panic!("No sub command provided!"),
     }

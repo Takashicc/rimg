@@ -1,9 +1,10 @@
-use crate::params::RenameParams;
+use crate::params::{CompressParams, RenameParams};
+use execute::Execute;
 use human_sort::compare;
 use indicatif::{ProgressBar, ProgressStyle};
 use question::{Answer, Question};
 use std::path::Path;
-use std::process;
+use std::process::{self, Command, Stdio};
 use std::{fs, path::PathBuf};
 use uuid::Uuid;
 use walkdir::{DirEntry, WalkDir};
@@ -18,13 +19,7 @@ pub fn rename(params: &RenameParams) {
     let directories_count = directories.len();
     println!("{} directories will be executed", directories_count);
 
-    if !params.yes {
-        let answer = Question::new("Are you sure to execute? (y/n):").confirm();
-        if answer == Answer::NO {
-            println!("Abort...");
-            process::exit(0);
-        }
-    }
+    ask(params.yes);
 
     for entry in directories {
         let mut files = WalkDir::new(entry.path().to_str().unwrap())
@@ -116,6 +111,85 @@ pub fn rename(params: &RenameParams) {
     }
 }
 
+pub fn compress(params: &CompressParams) {
+    // Check rar executable
+    if params.format_type == "rar"
+        && Command::new("rar")
+            .execute_check_exit_status_code(0)
+            .is_err()
+    {
+        println!("rar executable not found!\nAbort...");
+        process::exit(1);
+    }
+
+    // TODO If validate_only is true, get all the compressed file
+    // TODO else get all the directories
+    let directories = WalkDir::new(&params.input_dir)
+        .max_depth(1)
+        .into_iter()
+        .filter_map(Result::ok)
+        .filter(|v| is_dir(v) && !is_hidden(v) && !is_parent(v.path(), &params.input_dir))
+        .collect::<Vec<DirEntry>>();
+
+    if directories.is_empty() {
+        println!("There are no directories to be executed\nAbort...");
+        process::exit(0);
+    }
+
+    let execute_target_len = directories.len();
+    println!("{} directories will be executed", execute_target_len);
+
+    ask(params.yes);
+
+    let bar = ProgressBar::new(execute_target_len as u64).with_style(
+        ProgressStyle::default_bar()
+            .template("|{bar:60.green/blue}| {pos:5}/{len:5} {msg}")
+            .unwrap()
+            .progress_chars("##>-"),
+    );
+
+    for directory in directories {
+        let filename = format!("{}.rar", directory.path().to_str().unwrap());
+        bar.set_message(format!("Compressing {}", &filename));
+        let mut entries = WalkDir::new(directory.path().to_str().unwrap())
+            .max_depth(1)
+            .into_iter()
+            .filter_map(Result::ok)
+            .filter(|v| !is_hidden(v) && !is_parent(v.path(), directory.path().to_str().unwrap()))
+            .map(|v| v.file_name().to_str().unwrap().to_owned())
+            .collect::<Vec<String>>();
+
+        let program = r"rar";
+        let mut args = ["a", "-r", "-m5", "--"]
+            .iter()
+            .map(|s| s.to_string())
+            .collect::<Vec<String>>();
+        args.push(filename.clone());
+        args.append(&mut entries);
+
+        let mut command = Command::new(program);
+        command.args(args);
+        command.current_dir(params.input_dir.as_str());
+        command.stdout(Stdio::null());
+
+        if let Some(exit_code) = command.execute().unwrap() {
+            if exit_code == 0 {
+                bar.set_message(format!("Compressed {}!", &filename));
+            } else {
+                bar.set_message(format!("Failed to compress {}!", &filename));
+            }
+        } else {
+            bar.set_message("Interrupted!");
+        }
+
+        bar.inc(1);
+    }
+
+    bar.finish();
+
+    // TODO After compressing, validate the compressed files when validate flag is true
+}
+
 fn is_file(entry: &DirEntry) -> bool {
     entry.file_type().is_file()
 }
@@ -132,6 +206,10 @@ fn is_hidden(entry: &DirEntry) -> bool {
         .unwrap_or(false)
 }
 
+fn is_parent(v: &Path, parent: &str) -> bool {
+    v == Path::new(parent)
+}
+
 fn gen_random_path(parent: &Path, ext: &str) -> PathBuf {
     let mut random_path;
     loop {
@@ -143,4 +221,14 @@ fn gen_random_path(parent: &Path, ext: &str) -> PathBuf {
     }
 
     random_path
+}
+
+fn ask(yes: bool) {
+    if !yes {
+        let answer = Question::new("Are you sure to execute? (y/n):").confirm();
+        if answer == Answer::NO {
+            println!("Abort...");
+            process::exit(0);
+        }
+    }
 }
