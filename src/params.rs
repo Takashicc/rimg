@@ -1,3 +1,4 @@
+use crate::constant::RAR_PATH;
 use crate::validator;
 use clap::Parser;
 
@@ -68,7 +69,7 @@ pub struct CompressParams {
     #[arg(
         short,
         long,
-        default_value_t = String::from("rar"),
+        default_value_t = String::from(RAR_PATH),
         value_parser = validator::format_type_check,
         help = "Compress file format type"
     )]

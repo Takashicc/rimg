@@ -1,3 +1,4 @@
+use crate::constant::RAR_PATH;
 use std::fs;
 
 pub fn dir_exists(s: &str) -> Result<String, String> {
@@ -28,7 +29,7 @@ pub fn start_from_zero(s: &str) -> Result<u8, String> {
 }
 
 pub fn format_type_check(s: &str) -> Result<String, String> {
-    if s == "rar" {
+    if s == RAR_PATH {
         Ok(s.to_owned())
     } else {
         Err(format!("`{}` isn't a valid format type", s))
