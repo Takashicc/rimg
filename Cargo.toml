@@ -7,6 +7,7 @@ version = "0.1.0"
 
 [dependencies]
 clap = {version = "4.0.18", features = ["derive"]}
+execute = "0.2.11"
 human-sort = "0.2.2"
 indicatif = "0.17.1"
 question = "0.2.2"
