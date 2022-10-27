@@ -1,3 +1,4 @@
+use crate::constant::RAR_PATH;
 use crate::params::{CompressParams, RenameParams};
 use execute::Execute;
 use human_sort::compare;
@@ -113,8 +114,8 @@ pub fn rename(params: &RenameParams) {
 
 pub fn compress(params: &CompressParams) {
     // Check rar executable
-    if params.format_type == "rar"
-        && Command::new("rar")
+    if params.format_type == RAR_PATH
+        && Command::new(RAR_PATH)
             .execute_check_exit_status_code(0)
             .is_err()
     {
@@ -159,7 +160,6 @@ pub fn compress(params: &CompressParams) {
             .map(|v| v.file_name().to_str().unwrap().to_owned())
             .collect::<Vec<String>>();
 
-        let program = r"rar";
         let mut args = ["a", "-r", "-m5", "--"]
             .iter()
             .map(|s| s.to_string())
@@ -167,7 +167,7 @@ pub fn compress(params: &CompressParams) {
         args.push(filename.clone());
         args.append(&mut entries);
 
-        let mut command = Command::new(program);
+        let mut command = Command::new(RAR_PATH);
         command.args(args);
         command.current_dir(params.input_dir.as_str());
         command.stdout(Stdio::null());
