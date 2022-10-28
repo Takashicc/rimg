@@ -25,6 +25,14 @@ pub fn is_parent(v: &Path, parent: &str) -> bool {
     v == Path::new(parent)
 }
 
+pub fn have_extension(extension: &str, path: &Path) -> bool {
+    if let Some(v) = path.extension() {
+        v.to_str().unwrap() == extension
+    } else {
+        false
+    }
+}
+
 pub fn gen_random_path(parent: &Path, ext: &str) -> PathBuf {
     let mut random_path;
     loop {
