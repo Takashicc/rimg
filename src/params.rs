@@ -35,7 +35,7 @@ pub struct RenameParams {
         value_parser = validator::start_from_zero,
         help = "Initial number"
     )]
-    pub initial: u8,
+    pub initial: u32,
 
     #[arg(
         short,
