@@ -1,5 +1,5 @@
 use crate::constant::RAR_PATH;
-use crate::executor::utils::{ask, is_dir, is_hidden, is_parent};
+use crate::executor::utils::{ask, have_extension, is_dir, is_hidden, is_parent};
 use crate::params::compress::CompressParams;
 use colored::Colorize;
 use execute::Execute;
@@ -19,8 +19,29 @@ pub fn execute(params: &CompressParams) {
         process::exit(1);
     }
 
-    // TODO If validate_only is true, get all the compressed file
-    // TODO else get all the directories
+    if params.validate_only {
+        let files = WalkDir::new(&params.input_dir)
+            .max_depth(1)
+            .into_iter()
+            .filter_map(Result::ok)
+            .filter(|v| have_extension(&params.format_type, v.path()))
+            .map(|v| (v.file_name().to_str().unwrap().to_owned(), false))
+            .collect::<HashMap<String, bool>>();
+
+        if files.is_empty() {
+            println!(
+                "There are no {} files to be executed\nAbort...",
+                params.format_type.to_uppercase()
+            );
+            process::exit(0);
+        }
+
+        ask(params.yes);
+
+        validate_files(&params.input_dir, files);
+        process::exit(0);
+    }
+
     let directories = WalkDir::new(&params.input_dir)
         .max_depth(1)
         .into_iter()
