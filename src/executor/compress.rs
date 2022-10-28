@@ -1,6 +1,6 @@
 use crate::constant::RAR_PATH;
 use crate::executor::utils::{ask, is_dir, is_hidden, is_parent};
-use crate::params::CompressParams;
+use crate::params::compress::CompressParams;
 use execute::Execute;
 use indicatif::{ProgressBar, ProgressStyle};
 use std::process::{self, Command, Stdio};

@@ -14,9 +14,9 @@ struct Cli {
 #[derive(Subcommand)]
 enum Commands {
     /// Rename files in each directory to sequential number
-    Rename(params::RenameParams),
+    Rename(params::rename::RenameParams),
     /// Compress files in each directory
-    Compress(params::CompressParams),
+    Compress(params::compress::CompressParams),
 }
 
 fn main() {

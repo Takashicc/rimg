@@ -1,6 +1,6 @@
 use crate::{
     executor::utils::{ask, gen_random_path, is_dir, is_file, is_hidden},
-    params::RenameParams,
+    params::rename::RenameParams,
 };
 use human_sort::compare;
 use indicatif::{ProgressBar, ProgressStyle};
