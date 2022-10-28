@@ -23,10 +23,10 @@ fn main() {
     let cli = Cli::parse();
     match &cli.command {
         Some(Commands::Rename(v)) => {
-            executor::rename(v);
+            executor::rename::execute(v);
         }
         Some(Commands::Compress(v)) => {
-            executor::compress(v);
+            executor::compress::execute(v);
         }
         None => panic!("No sub command provided!"),
     }
