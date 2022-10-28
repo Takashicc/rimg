@@ -66,7 +66,7 @@ pub fn execute(params: &CompressParams) {
 
         let mut command = Command::new(RAR_PATH);
         command.args(args);
-        command.current_dir(params.input_dir.as_str());
+        command.current_dir(directory.path().to_str().unwrap());
         command.stdout(Stdio::null());
 
         if let Some(exit_code) = command.execute().unwrap() {
