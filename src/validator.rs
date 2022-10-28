@@ -21,7 +21,7 @@ pub fn is_positive_number(s: &str) -> Result<u8, String> {
     }
 }
 
-pub fn start_from_zero(s: &str) -> Result<u8, String> {
+pub fn start_from_zero(s: &str) -> Result<u32, String> {
     let digit = s
         .parse()
         .map_err(|_| format!("`{}` isn't a number or starts from zero", s))?;

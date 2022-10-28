@@ -87,7 +87,7 @@ pub fn execute(params: &RenameParams) {
 
             // If the file was already renamed, skip
             if from_path == to_path {
-                seq_index += params.step;
+                seq_index += params.step as u32;
                 bar.inc(1);
                 continue;
             }
@@ -101,7 +101,7 @@ pub fn execute(params: &RenameParams) {
             }
 
             fs::rename(from_path, to_path).unwrap();
-            seq_index += params.step;
+            seq_index += params.step as u32;
             bar.inc(1);
         }
 
