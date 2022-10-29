@@ -5,6 +5,7 @@ use colored::Colorize;
 use execute::Execute;
 use indicatif::{ProgressBar, ProgressStyle};
 use std::collections::HashMap;
+use std::path::Path;
 use std::process::{self, Command, Stdio};
 use walkdir::{DirEntry, WalkDir};
 
@@ -70,8 +71,15 @@ pub fn execute(params: &CompressParams) {
 
     let mut compressed_files = HashMap::<String, bool>::new();
     for directory in directories {
-        let filename = format!("{}.rar", directory.path().to_str().unwrap());
-        bar.set_message(format!("Compressing {}", &filename));
+        let output_filepath = if let Some(v) = &params.output_dir {
+            Path::new(&v).join(format!("{}.rar", directory.file_name().to_str().unwrap()))
+        } else {
+            Path::new(&params.input_dir)
+                .join(format!("{}.rar", directory.file_name().to_str().unwrap()))
+        };
+
+        let output_filename = output_filepath.file_name().unwrap().to_str().unwrap();
+        bar.set_message(format!("Compressing {}", &output_filename));
         let mut entries = WalkDir::new(directory.path().to_str().unwrap())
             .max_depth(1)
             .into_iter()
@@ -84,7 +92,7 @@ pub fn execute(params: &CompressParams) {
             .iter()
             .map(|s| s.to_string())
             .collect::<Vec<String>>();
-        args.push(filename.clone());
+        args.push(output_filepath.to_str().unwrap().to_string());
         args.append(&mut entries);
 
         let mut command = Command::new(RAR_PATH);
@@ -94,10 +102,10 @@ pub fn execute(params: &CompressParams) {
 
         if let Some(exit_code) = command.execute().unwrap() {
             if exit_code == 0 {
-                compressed_files.insert(filename.clone(), false);
-                bar.set_message(format!("Compressed {}!", &filename));
+                compressed_files.insert(output_filename.to_string(), false);
+                bar.set_message(format!("Compressed {}!", &output_filename));
             } else {
-                bar.set_message(format!("Failed to compress {}!", &filename));
+                bar.set_message(format!("Failed to compress {}!", &output_filename));
             }
         } else {
             bar.set_message("Interrupted!");
@@ -109,7 +117,12 @@ pub fn execute(params: &CompressParams) {
 
     // Validate compressed files
     if params.validate {
-        validate_files(&params.input_dir, compressed_files);
+        let output_dir = if let Some(v) = &params.output_dir {
+            v
+        } else {
+            &params.input_dir
+        };
+        validate_files(output_dir, compressed_files);
     }
 }
 
