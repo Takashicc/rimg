@@ -36,6 +36,8 @@ pub fn execute(params: &CompressParams) {
             process::exit(0);
         }
 
+        println!("{} files will be executed", files.len());
+
         ask(params.yes);
 
         validate_files(&params.input_dir, files);
