@@ -1,6 +1,7 @@
+use indicatif::{ProgressBar, ProgressState, ProgressStyle};
 use question::{Answer, Question};
-use std::path::Path;
-use std::path::PathBuf;
+use std::fmt::Write;
+use std::path::{Path, PathBuf};
 use std::process;
 use uuid::Uuid;
 use walkdir::DirEntry;
@@ -54,4 +55,20 @@ pub fn ask(yes: bool) {
             process::exit(0);
         }
     }
+}
+
+pub fn get_progress_bar(length: u64) -> ProgressBar {
+    let pb = ProgressBar::new(length);
+    pb.set_style(
+        ProgressStyle::with_template(
+            "{spinner:.green} [{elapsed_precise}] [{bar:30.cyan/blue}] {pos/len} ({eta}) {msg}",
+        )
+        .unwrap()
+        .with_key("eta", |state: &ProgressState, w: &mut dyn Write| {
+            write!(w, "{:.1}s", state.eta().as_secs_f64()).unwrap()
+        })
+        .progress_chars("#>-"),
+    );
+
+    pb
 }

@@ -1,9 +1,8 @@
 use crate::{
-    executor::utils::{ask, gen_random_path, is_dir, is_file, is_hidden},
+    executor::utils::{ask, gen_random_path, get_progress_bar, is_dir, is_file, is_hidden},
     params::rename::RenameParams,
 };
 use human_sort::compare;
-use indicatif::{ProgressBar, ProgressStyle};
 use std::{fs, path::PathBuf};
 use walkdir::{DirEntry, WalkDir};
 
@@ -61,16 +60,8 @@ pub fn execute(params: &RenameParams) {
             );
         }
 
-        let mut template = String::from("|{bar:60.green/blue}| {pos:5}/{len:5} Renaming ");
-        template.push_str(dir_name);
-        let template = template.as_str();
-
-        let bar = ProgressBar::new(files.len() as u64).with_style(
-            ProgressStyle::default_bar()
-                .template(template)
-                .unwrap()
-                .progress_chars("##>-"),
-        );
+        let bar = get_progress_bar(files.len() as u64);
+        bar.set_message(format!("Renaming {}", dir_name));
 
         let mut seq_index = params.initial;
         for i in 0..files.len() {
@@ -105,6 +96,7 @@ pub fn execute(params: &RenameParams) {
             bar.inc(1);
         }
 
+        bar.set_message(format!("Rename complete {}", dir_name));
         bar.finish();
     }
 }
