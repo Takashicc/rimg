@@ -1,9 +1,8 @@
 use crate::constant::RAR_PATH;
-use crate::executor::utils::{ask, have_extension, is_dir, is_hidden, is_parent};
+use crate::executor::utils::{ask, get_progress_bar, have_extension, is_dir, is_hidden, is_parent};
 use crate::params::compress::CompressParams;
 use colored::Colorize;
 use execute::Execute;
-use indicatif::{ProgressBar, ProgressStyle};
 use std::collections::HashMap;
 use std::path::Path;
 use std::process::{self, Command, Stdio};
@@ -62,12 +61,7 @@ pub fn execute(params: &CompressParams) {
 
     ask(params.yes);
 
-    let bar = ProgressBar::new(execute_target_len as u64).with_style(
-        ProgressStyle::default_bar()
-            .template("|{bar:60.green/blue}| {pos:5}/{len:5} {msg}")
-            .unwrap()
-            .progress_chars("##>-"),
-    );
+    let bar = get_progress_bar(execute_target_len as u64);
 
     let mut compressed_files = HashMap::<String, bool>::new();
     for directory in directories {
@@ -127,12 +121,8 @@ pub fn execute(params: &CompressParams) {
 }
 
 fn validate_files(input_dir: &str, mut files: HashMap<String, bool>) {
-    let bar = ProgressBar::new(files.len() as u64).with_style(
-        ProgressStyle::default_bar()
-            .template("|{bar:60.green/blue}| {pos:5}/{len:5} {msg}")
-            .unwrap()
-            .progress_chars("##>-"),
-    );
+    let bar = get_progress_bar(files.len() as u64);
+
     for (filename, compress_success) in files.iter_mut() {
         let mut command = Command::new(RAR_PATH);
         command.args(vec!["t", "--", filename.as_str()]);
