@@ -28,6 +28,7 @@ pub struct CompressParams {
     pub format_type: String,
 
     #[arg(
+        short,
         long,
         conflicts_with = "validate_only",
         help = "Check the compressed file is not corrupted after the file was created"
