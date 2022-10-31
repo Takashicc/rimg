@@ -5,7 +5,7 @@ use colored::Colorize;
 use execute::Execute;
 use std::collections::HashMap;
 use std::path::Path;
-use std::process::{self, Command, Stdio};
+use std::process::{self, Command};
 use walkdir::{DirEntry, WalkDir};
 
 pub fn execute(params: &CompressParams) {
@@ -15,7 +15,8 @@ pub fn execute(params: &CompressParams) {
             .execute_check_exit_status_code(0)
             .is_err()
     {
-        println!("rar executable not found!\nAbort...");
+        eprintln!("{}", "rar executable not found!.".red().bold());
+        eprintln!("Abort...");
         process::exit(1);
     }
 
@@ -29,10 +30,16 @@ pub fn execute(params: &CompressParams) {
             .collect::<HashMap<String, bool>>();
 
         if files.is_empty() {
-            println!(
-                "There are no {} files to be executed\nAbort...",
-                params.format_type.to_uppercase()
+            eprintln!(
+                "{}",
+                format!(
+                    "There are no {} files to be executed",
+                    params.format_type.to_uppercase()
+                )
+                .red()
+                .bold()
             );
+            eprintln!("Abort...");
             process::exit(0);
         }
 
@@ -52,7 +59,8 @@ pub fn execute(params: &CompressParams) {
         .collect::<Vec<DirEntry>>();
 
     if directories.is_empty() {
-        println!("There are no directories to be executed\nAbort...");
+        eprintln!("{}", "There are no directories to be executed".red().bold());
+        println!("Abort...");
         process::exit(0);
     }
 
@@ -63,8 +71,9 @@ pub fn execute(params: &CompressParams) {
 
     let bar = get_progress_bar(execute_target_len as u64);
 
-    let mut compressed_files = HashMap::<String, bool>::new();
-    for directory in directories {
+    let mut compress_success_files = HashMap::<String, bool>::new();
+    let mut compress_error_files = Vec::<String>::new();
+    for directory in &directories {
         let output_filepath = if let Some(v) = &params.output_dir {
             Path::new(&v).join(format!("{}.rar", directory.file_name().to_str().unwrap()))
         } else {
@@ -92,22 +101,57 @@ pub fn execute(params: &CompressParams) {
         let mut command = Command::new(RAR_PATH);
         command.args(args);
         command.current_dir(directory.path().to_str().unwrap());
-        command.stdout(Stdio::null());
 
-        if let Some(exit_code) = command.execute().unwrap() {
-            if exit_code == 0 {
-                compressed_files.insert(output_filename.to_string(), false);
-                bar.set_message(format!("Compressed {}!", &output_filename));
-            } else {
+        match command.execute() {
+            Ok(Some(exit_code)) => {
+                if exit_code == 0 {
+                    compress_success_files.insert(output_filename.to_string(), false);
+                    bar.set_message(format!("Compressed {}!", &output_filename));
+                } else {
+                    compress_error_files.push(output_filename.to_string());
+                    bar.set_message(format!("Failed to compress {}!", &output_filename));
+                }
+            }
+            _ => {
+                compress_error_files.push(output_filename.to_string());
                 bar.set_message(format!("Failed to compress {}!", &output_filename));
             }
-        } else {
-            bar.set_message("Interrupted!");
-        }
+        };
 
         bar.inc(1);
     }
     bar.finish();
+
+    // Show compression result
+    println!("{}", "Compression Result".green().bold());
+    println!("# ----------------- #");
+    println!(
+        "| {} |",
+        format!("Total    ->  {: >4}", directories.len())
+            .blue()
+            .bold()
+    );
+    println!(
+        "| {} |",
+        format!("Created  ->  {: >4}", compress_success_files.len())
+            .green()
+            .bold()
+    );
+    println!(
+        "| {} |",
+        format!("Error    ->  {: >4}", compress_error_files.len())
+            .red()
+            .bold()
+    );
+    println!("# ----------------- #");
+
+    // Show compress error directories
+    if !compress_error_files.is_empty() {
+        println!("{}", "The error directories are listed below".red().bold());
+        for error_file in compress_error_files {
+            println!("{}", error_file);
+        }
+    }
 
     // Validate compressed files
     if params.validate {
@@ -116,7 +160,7 @@ pub fn execute(params: &CompressParams) {
         } else {
             &params.input_dir
         };
-        validate_files(output_dir, compressed_files);
+        validate_files(output_dir, compress_success_files);
     }
 }
 
@@ -127,7 +171,6 @@ fn validate_files(input_dir: &str, mut files: HashMap<String, bool>) {
         let mut command = Command::new(RAR_PATH);
         command.args(vec!["t", "--", filename.as_str()]);
         command.current_dir(input_dir);
-        command.stdout(Stdio::null());
 
         bar.set_message(format!("Validating {}", filename));
 
