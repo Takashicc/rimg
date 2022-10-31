@@ -174,15 +174,18 @@ fn validate_files(input_dir: &str, mut files: HashMap<String, bool>) {
 
         bar.set_message(format!("Validating {}", filename));
 
-        if let Some(exit_code) = command.execute().unwrap() {
-            if exit_code == 0 {
-                *compress_success = true;
-                bar.set_message("OK");
-            } else {
+        match command.execute() {
+            Ok(Some(exit_code)) => {
+                if exit_code == 0 {
+                    *compress_success = true;
+                    bar.set_message("OK");
+                } else {
+                    bar.set_message("NG");
+                }
+            }
+            _ => {
                 bar.set_message("NG");
             }
-        } else {
-            bar.set_message("Interrupted!");
         }
 
         bar.inc(1);
@@ -190,12 +193,33 @@ fn validate_files(input_dir: &str, mut files: HashMap<String, bool>) {
     bar.finish();
 
     let invalid_files: HashMap<_, _> = files.iter().filter(|&(_, valid)| !(*valid)).collect();
+    let valid_files_len = files.len() - invalid_files.len();
+
+    // Show validation result
+    println!("{}", "Validation Result".green().bold());
+    println!("# ----------------- #");
+    println!(
+        "| {} |",
+        format!("Total    ->  {: >4}", files.len()).blue().bold()
+    );
+    println!(
+        "| {} |",
+        format!("Valid    ->  {: >4}", valid_files_len)
+            .green()
+            .bold()
+    );
+    println!(
+        "| {} |",
+        format!("Invalid  ->  {: >4}", invalid_files.len())
+            .red()
+            .bold()
+    );
+    println!("# ----------------- #");
+
     if !invalid_files.is_empty() {
         println!("{}", "The corrupted files are listed below".red().bold());
         for &invalid_file in invalid_files.keys() {
             println!("{}", invalid_file);
         }
-    } else {
-        println!("{}", "All files can be unpacked".green().bold());
     }
 }
