@@ -15,11 +15,7 @@ pub fn is_dir(entry: &DirEntry) -> bool {
 }
 
 pub fn is_hidden(entry: &DirEntry) -> bool {
-    entry
-        .file_name()
-        .to_str()
-        .map(|s| s.starts_with('.'))
-        .unwrap_or(false)
+    entry.file_name().to_string_lossy().starts_with('.')
 }
 
 pub fn is_parent(v: &Path, parent: &str) -> bool {
@@ -28,10 +24,12 @@ pub fn is_parent(v: &Path, parent: &str) -> bool {
 
 pub fn have_extension(extension: &str, path: &Path) -> bool {
     if let Some(v) = path.extension() {
-        v.to_str().unwrap() == extension
-    } else {
-        false
+        if let Some(v) = v.to_str() {
+            return v == extension;
+        }
     }
+
+    false
 }
 
 pub fn gen_random_path(parent: &Path, ext: &str) -> PathBuf {
