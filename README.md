@@ -1,5 +1,7 @@
 # rimg
 
+[![Build & Test](https://github.com/Takashicc/rimg/actions/workflows/ci.yml/badge.svg)](https://github.com/Takashicc/rimg/actions/workflows/ci.yml)
+
 ## Build
 
 After installing Rust, run the below commands to build.
