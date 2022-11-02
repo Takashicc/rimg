@@ -1,5 +1,5 @@
 use crate::validator;
-use clap::Parser;
+use clap::{value_parser, Parser};
 
 #[derive(Parser)]
 pub struct RenameParams {
@@ -13,7 +13,7 @@ pub struct RenameParams {
         short,
         long,
         default_value_t = 4,
-        value_parser = validator::is_positive_number,
+        value_parser = value_parser!(u8).range(1..=6),
         help = "Number of digits for renaming"
     )]
     pub digit: u8,
@@ -31,7 +31,7 @@ pub struct RenameParams {
         short,
         long,
         default_value_t = 1,
-        value_parser = validator::start_from_zero,
+        value_parser = value_parser!(u32).range(0..),
         help = "Initial number"
     )]
     pub initial: u32,
@@ -40,7 +40,7 @@ pub struct RenameParams {
         short,
         long,
         default_value_t = 1,
-        value_parser = validator::is_positive_number,
+        value_parser = value_parser!(u8).range(1..),
         help = "Number of steps to count each files"
     )]
     pub step: u8,
