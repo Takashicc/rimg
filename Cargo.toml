@@ -1,18 +1,18 @@
 [package]
 edition = "2021"
 name = "rimg"
-version = "0.1.0"
+version = "0.2.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-clap = {version = "4.0.18", features = ["derive"]}
+clap = { version = "4.0.18", features = ["derive"] }
 colored = "2.0.0"
 execute = "0.2.11"
 human-sort = "0.2.2"
 indicatif = "0.17.1"
 question = "0.2.2"
-uuid = {version = "1.2.1", features = ["v4"]}
+uuid = { version = "1.2.1", features = ["v4"] }
 walkdir = "2.3.2"
 
 [profile.release]
