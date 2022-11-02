@@ -10,35 +10,22 @@ pub fn dir_exists(s: &str) -> Result<String, String> {
     }
 }
 
-pub fn is_positive_number(s: &str) -> Result<u8, String> {
-    let digit = s
-        .parse()
-        .map_err(|_| format!("`{} isn't a number or positive number", s))?;
-    if digit == 0 {
-        Err(format!("`{}` isn't a positive number", &digit))
-    } else {
-        Ok(digit)
-    }
-}
-
-pub fn start_from_zero(s: &str) -> Result<u32, String> {
-    let digit = s
-        .parse()
-        .map_err(|_| format!("`{}` isn't a number or starts from zero", s))?;
-    Ok(digit)
-}
-
 pub fn format_type_check(s: &str) -> Result<String, String> {
     if s == RAR_PATH {
         Ok(s.to_owned())
     } else {
-        Err(format!("`{}` isn't a valid format type", s))
+        Err(format!(
+            "`{}` isn't supported format type\nCurrently supports `rar`",
+            s
+        ))
     }
 }
 
 pub fn extension_check(s: &str) -> Result<String, String> {
     if s.is_empty() {
-        Err("Empty extension is invalid".to_string())
+        Err("Empty extension is not valid".to_string())
+    } else if s.len() > 5 {
+        Err(format!("`{}` Extension is too long\nMax length is 4", s))
     } else {
         Ok(s.to_owned())
     }
@@ -67,56 +54,6 @@ mod tests {
         }
     }
 
-    mod is_positive_number {
-        use super::super::*;
-
-        #[test]
-        #[should_panic]
-        fn minus_one_should_panic() {
-            is_positive_number("-1").unwrap();
-        }
-
-        #[test]
-        #[should_panic]
-        fn zero_should_panic() {
-            is_positive_number("0").unwrap();
-        }
-
-        #[test]
-        fn one_should_return_number() {
-            let result = is_positive_number("1").unwrap();
-            assert_eq!(1, result);
-        }
-
-        #[test]
-        #[should_panic]
-        fn string_should_panic() {
-            is_positive_number("hello").unwrap();
-        }
-    }
-
-    mod start_from_zero {
-        use super::super::*;
-
-        #[test]
-        #[should_panic]
-        fn minus_one_should_panic() {
-            start_from_zero("-1").unwrap();
-        }
-
-        #[test]
-        fn zero_should_return_number() {
-            let result = start_from_zero("0").unwrap();
-            assert_eq!(0, result);
-        }
-
-        #[test]
-        fn one_should_return_number() {
-            let result = start_from_zero("1").unwrap();
-            assert_eq!(1, result);
-        }
-    }
-
     mod format_type_check {
         use super::super::*;
 
@@ -137,15 +74,27 @@ mod tests {
         use super::super::*;
 
         #[test]
-        fn valid_extension_should_return_string() {
-            let result = extension_check("zip").unwrap();
-            assert_eq!("zip", result);
+        #[should_panic]
+        fn empty_extension_should_panic() {
+            extension_check("").unwrap();
+        }
+
+        #[test]
+        fn one_char_extension_should_return_string() {
+            let result = extension_check("a").unwrap();
+            assert_eq!("a", result);
+        }
+
+        #[test]
+        fn five_char_extension_should_return_string() {
+            let result = extension_check("abcde").unwrap();
+            assert_eq!("abcde", result);
         }
 
         #[test]
         #[should_panic]
-        fn empty_extension_should_panic() {
-            extension_check("").unwrap();
+        fn six_char_extension_should_panic() {
+            extension_check("abcdef").unwrap();
         }
     }
 }
