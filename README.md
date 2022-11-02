@@ -9,7 +9,7 @@ $ git clone https://github.com/Takashicc/rimg
 $ cd rimg
 $ cargo build --release
 $ ./target/release/rimg --version
-rimg 0.1.0
+rimg 0.2.0
 ```
 
 ## Commands
