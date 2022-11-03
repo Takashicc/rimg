@@ -3,7 +3,8 @@ use crate::{
     params::rename::RenameParams,
 };
 use human_sort::compare;
-use std::{fs, path::PathBuf};
+use std::process;
+use std::{ffi::OsStr, fs, path::PathBuf};
 use walkdir::{DirEntry, WalkDir};
 
 pub fn execute(params: &RenameParams) {
@@ -19,7 +20,7 @@ pub fn execute(params: &RenameParams) {
     ask(params.yes);
 
     for entry in directories {
-        let mut files = WalkDir::new(entry.path().to_str().unwrap())
+        let mut files = WalkDir::new(entry.path())
             .max_depth(1)
             .into_iter()
             .filter_map(Result::ok)
@@ -29,9 +30,8 @@ pub fn execute(params: &RenameParams) {
                     && params.extensions.contains(
                         &v.path()
                             .extension()
-                            .unwrap()
-                            .to_str()
-                            .unwrap()
+                            .unwrap_or_else(|| OsStr::new(""))
+                            .to_string_lossy()
                             .to_lowercase(),
                     )
             })
@@ -40,12 +40,12 @@ pub fn execute(params: &RenameParams) {
 
         // Sort with human-friendly order
         files.sort_by(|a, b| {
-            let a = a.file_name().unwrap().to_str().unwrap();
-            let b = b.file_name().unwrap().to_str().unwrap();
-            compare(a, b)
+            let a = a.to_string_lossy().to_string();
+            let b = b.to_string_lossy().to_string();
+            compare(&a, &b)
         });
 
-        let dir_name = entry.file_name().to_str().unwrap();
+        let dir_name = entry.file_name().to_string_lossy();
         let extension_types = params.extensions.join(", ").to_lowercase();
         if files.is_empty() {
             println!(
@@ -67,7 +67,11 @@ pub fn execute(params: &RenameParams) {
         for i in 0..files.len() {
             let from_path = &files[i].clone();
             let from_parent = from_path.parent().unwrap();
-            let extension = from_path.extension().unwrap().to_str().unwrap();
+            let extension = from_path
+                .extension()
+                .unwrap_or_else(|| OsStr::new(""))
+                .to_string_lossy()
+                .to_string();
 
             let to_path = &from_parent.join(format!(
                 "{:0width$}.{ext}",
@@ -85,18 +89,35 @@ pub fn execute(params: &RenameParams) {
 
             // If the destination file already exists, rename the existed file to random filename
             if to_path.exists() {
-                let random_path = gen_random_path(from_parent, extension);
-                let index = files.iter().position(|v| v == to_path).unwrap();
+                let random_path = gen_random_path(from_parent, &extension);
+                let index = match files.iter().position(|v| v == to_path) {
+                    Some(v) => v,
+                    None => {
+                        eprintln!("Unexpected error!");
+                        process::exit(1);
+                    }
+                };
                 files[index] = random_path.clone();
-                fs::rename(to_path, random_path).unwrap();
+                file_rename(to_path, &random_path);
             }
 
-            fs::rename(from_path, to_path).unwrap();
+            file_rename(from_path, to_path);
             seq_index += params.step as u32;
             bar.inc(1);
         }
 
         bar.set_message(format!("Rename complete {}", dir_name));
         bar.finish();
+    }
+}
+
+fn file_rename(from_path: &PathBuf, to_path: &PathBuf) {
+    loop {
+        if fs::rename(from_path, to_path).is_ok() {
+            break;
+        } else {
+            eprintln!("Error! Renaming {:?} to {:?}", from_path, to_path);
+            eprintln!("Try again...");
+        }
     }
 }
