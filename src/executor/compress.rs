@@ -26,7 +26,7 @@ pub fn execute(params: &CompressParams) {
             .into_iter()
             .filter_map(Result::ok)
             .filter(|v| have_extension(&params.format_type, v.path()))
-            .map(|v| (v.file_name().to_str().unwrap().to_owned(), false))
+            .map(|v| (v.file_name().to_string_lossy().to_string(), false))
             .collect::<HashMap<String, bool>>();
 
         if files.is_empty() {
@@ -75,32 +75,32 @@ pub fn execute(params: &CompressParams) {
     let mut compress_error_files = Vec::<String>::new();
     for directory in &directories {
         let output_filepath = if let Some(v) = &params.output_dir {
-            Path::new(&v).join(format!("{}.rar", directory.file_name().to_str().unwrap()))
+            Path::new(&v).join(format!("{}.rar", directory.file_name().to_string_lossy()))
         } else {
             Path::new(&params.input_dir)
-                .join(format!("{}.rar", directory.file_name().to_str().unwrap()))
+                .join(format!("{}.rar", directory.file_name().to_string_lossy()))
         };
 
-        let output_filename = output_filepath.file_name().unwrap().to_str().unwrap();
+        let output_filename = output_filepath.file_name().unwrap().to_string_lossy();
         bar.set_message(format!("Compressing {}", &output_filename));
-        let mut entries = WalkDir::new(directory.path().to_str().unwrap())
+        let mut entries = WalkDir::new(directory.path())
             .max_depth(1)
             .into_iter()
             .filter_map(Result::ok)
-            .filter(|v| !is_hidden(v) && !is_parent(v.path(), directory.path().to_str().unwrap()))
-            .map(|v| v.file_name().to_str().unwrap().to_owned())
+            .filter(|v| !is_hidden(v) && !is_parent(v.path(), &directory.path().to_string_lossy()))
+            .map(|v| v.file_name().to_string_lossy().to_string())
             .collect::<Vec<String>>();
 
         let mut args = ["a", "-r", "-m5", "--"]
             .iter()
             .map(|s| s.to_string())
             .collect::<Vec<String>>();
-        args.push(output_filepath.to_str().unwrap().to_string());
+        args.push(output_filepath.to_string_lossy().to_string());
         args.append(&mut entries);
 
         let mut command = Command::new(RAR_PATH);
         command.args(args);
-        command.current_dir(directory.path().to_str().unwrap());
+        command.current_dir(directory.path().to_string_lossy().to_string());
 
         match command.execute() {
             Ok(Some(exit_code)) => {
