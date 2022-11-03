@@ -3,6 +3,7 @@ use crate::validator;
 use clap::Parser;
 
 #[derive(Parser)]
+/// Params for compress subcommand
 pub struct CompressParams {
     #[arg(
         value_parser = validator::dir_exists,

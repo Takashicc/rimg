@@ -8,6 +8,11 @@ use std::path::Path;
 use std::process::{self, Command};
 use walkdir::{DirEntry, WalkDir};
 
+/// Compress each directory and validate
+///
+/// # Arguments
+///
+/// * `params` - Compress params
 pub fn execute(params: &CompressParams) {
     // Check rar executable
     if params.format_type == RAR_PATH
@@ -164,13 +169,19 @@ pub fn execute(params: &CompressParams) {
     }
 }
 
-fn validate_files(input_dir: &str, mut files: HashMap<String, bool>) {
+/// Validate files
+///
+/// # Arguments
+///
+/// * `current_dir` - Current directory
+/// * `files` - Filepaths to validate
+fn validate_files(current_dir: &str, mut files: HashMap<String, bool>) {
     let bar = get_progress_bar(files.len() as u64);
 
     for (filename, compress_success) in files.iter_mut() {
         let mut command = Command::new(RAR_PATH);
         command.args(vec!["t", "--", filename.as_str()]);
-        command.current_dir(input_dir);
+        command.current_dir(current_dir);
 
         bar.set_message(format!("Validating {}", filename));
 
