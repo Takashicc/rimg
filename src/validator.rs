@@ -1,6 +1,11 @@
 use crate::constant::RAR_PATH;
 use std::fs;
 
+/// Check dir exists or not
+///
+/// # Arguments
+///
+/// * `s` - Given arg
 pub fn dir_exists(s: &str) -> Result<String, String> {
     let metadata = fs::metadata(s).map_err(|_| format!("`{}` isn't a directory", s))?;
     if !metadata.is_dir() {
@@ -10,6 +15,11 @@ pub fn dir_exists(s: &str) -> Result<String, String> {
     }
 }
 
+/// Check format type is valid
+///
+/// # Arguments
+///
+/// * `s` - Given arg
 pub fn format_type_check(s: &str) -> Result<String, String> {
     if s == RAR_PATH {
         Ok(s.to_owned())
@@ -21,6 +31,11 @@ pub fn format_type_check(s: &str) -> Result<String, String> {
     }
 }
 
+/// Check extension is valid
+///
+/// # Arguments
+///
+/// * `s` - Given arg
 pub fn extension_check(s: &str) -> Result<String, String> {
     if s.is_empty() {
         Err("Empty extension is not valid".to_string())

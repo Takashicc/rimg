@@ -2,6 +2,7 @@ use crate::validator;
 use clap::{value_parser, Parser};
 
 #[derive(Parser)]
+/// Params for rename subcommand
 pub struct RenameParams {
     #[arg(
         value_parser = validator::dir_exists,

@@ -7,6 +7,11 @@ use std::process;
 use std::{ffi::OsStr, fs, path::PathBuf};
 use walkdir::{DirEntry, WalkDir};
 
+/// Rename files in each directory
+///
+/// # Arguments
+///
+/// * `params` - Rename params
 pub fn execute(params: &RenameParams) {
     let directories = WalkDir::new(&params.input_dir)
         .into_iter()
@@ -111,6 +116,12 @@ pub fn execute(params: &RenameParams) {
     }
 }
 
+/// Rename file until success
+///
+/// # Arguments
+///
+/// * `from_path` - From path
+/// * `to_path` - To path
 fn file_rename(from_path: &PathBuf, to_path: &PathBuf) {
     loop {
         if fs::rename(from_path, to_path).is_ok() {
