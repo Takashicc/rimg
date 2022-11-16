@@ -20,6 +20,12 @@ rimg 0.2.0
 
 Rename files in each directory to sequential number.
 
+This command will look recursively.
+
+<img src="/docs/images/rename-01.png"/>
+
+<img src="/docs/images/rename-02.png"/>
+
 ```sh
 $ ./target/release/rimg rename "~/test" -y
 2 directories will be executed
@@ -31,6 +37,12 @@ Renaming JPG files in xxx directory
 ### Compress
 
 Compress each directory directly under the specified directory.
+
+This command will **NOT** look recursively.
+
+<img src="/docs/images/compress-01.png"/>
+
+<img src="/docs/images/compress-02.png"/>
 
 ```sh
 $ ./target/release/rimg compress "~/test" -v -y
