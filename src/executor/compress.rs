@@ -2,7 +2,9 @@ use crate::constant::RAR_PATH;
 use crate::executor::utils::{ask, get_progress_bar, have_extension, is_dir, is_hidden, is_parent};
 use crate::params::compress::CompressParams;
 use colored::Colorize;
+use core::panic;
 use execute::Execute;
+use indicatif::ProgressBar;
 use std::collections::HashMap;
 use std::path::Path;
 use std::process::{self, Command};
@@ -52,7 +54,7 @@ pub fn execute(params: &CompressParams) {
 
         ask(params.yes);
 
-        validate_files(&params.input_dir, files);
+        validate_files(&params, files);
         process::exit(0);
     }
 
@@ -69,16 +71,92 @@ pub fn execute(params: &CompressParams) {
         process::exit(0);
     }
 
-    let execute_target_len = directories.len();
-    println!("{} directories will be executed", execute_target_len);
-
     ask(params.yes);
 
-    let bar = get_progress_bar(execute_target_len as u64);
+    let success_files = compress_files(params, &directories);
+    if params.validate {
+        validate_files(params, success_files);
+    }
+}
 
-    let mut compress_success_files = HashMap::<String, bool>::new();
-    let mut compress_error_files = Vec::<String>::new();
-    for directory in &directories {
+/// Validate files
+///
+/// # Arguments
+///
+/// * `params` - Compress params
+/// * `directories` - Directories to compress
+fn compress_files(params: &CompressParams, directories: &Vec<DirEntry>) -> HashMap<String, bool> {
+    let execute_target_len = directories.len() as u64;
+    println!("{} directories will be executed", execute_target_len);
+
+    let bar = get_progress_bar(execute_target_len);
+    let mut success_files = HashMap::<String, bool>::new();
+    let mut error_files = Vec::<String>::new();
+
+    match params.format_type.as_str() {
+        RAR_PATH => compress_rar(
+            &directories,
+            params,
+            &bar,
+            &mut success_files,
+            &mut error_files,
+        ),
+        _ => panic!(),
+    }
+
+    bar.finish();
+
+    // Show compression result
+    println!("{}", "Compression Result".green().bold());
+    println!("# ----------------- #");
+    println!(
+        "| {} |",
+        format!("Total    ->  {: >4}", directories.len())
+            .blue()
+            .bold()
+    );
+    println!(
+        "| {} |",
+        format!("Created  ->  {: >4}", success_files.len())
+            .green()
+            .bold()
+    );
+    println!(
+        "| {} |",
+        format!("Error    ->  {: >4}", error_files.len())
+            .red()
+            .bold()
+    );
+    println!("# ----------------- #");
+
+    // Show compress error directories
+    if !error_files.is_empty() {
+        println!("{}", "The error directories are listed below".red().bold());
+        for error_file in error_files {
+            println!("{}", error_file);
+        }
+    }
+
+    return success_files;
+}
+
+/// Compress files to rar
+///
+/// # Arguments
+///
+/// * `directories` - Directories to compress
+/// * `params` - Compress params
+/// * `bar` - Progress bar
+/// * `success_files` - Successfully created files
+/// * `error_files` - Error files
+fn compress_rar(
+    directories: &Vec<DirEntry>,
+    params: &CompressParams,
+    bar: &ProgressBar,
+    success_files: &mut HashMap<String, bool>,
+    error_files: &mut Vec<String>,
+) {
+    for directory in directories {
         let output_filepath = if let Some(v) = &params.output_dir {
             Path::new(&v).join(format!("{}.rar", directory.file_name().to_string_lossy()))
         } else {
@@ -110,62 +188,20 @@ pub fn execute(params: &CompressParams) {
         match command.execute() {
             Ok(Some(exit_code)) => {
                 if exit_code == 0 {
-                    compress_success_files.insert(output_filename.to_string(), false);
+                    success_files.insert(output_filename.to_string(), false);
                     bar.set_message(format!("Compressed {}!", &output_filename));
                 } else {
-                    compress_error_files.push(output_filename.to_string());
+                    error_files.push(output_filename.to_string());
                     bar.set_message(format!("Failed to compress {}!", &output_filename));
                 }
             }
             _ => {
-                compress_error_files.push(output_filename.to_string());
+                error_files.push(output_filename.to_string());
                 bar.set_message(format!("Failed to compress {}!", &output_filename));
             }
         };
 
         bar.inc(1);
-    }
-    bar.finish();
-
-    // Show compression result
-    println!("{}", "Compression Result".green().bold());
-    println!("# ----------------- #");
-    println!(
-        "| {} |",
-        format!("Total    ->  {: >4}", directories.len())
-            .blue()
-            .bold()
-    );
-    println!(
-        "| {} |",
-        format!("Created  ->  {: >4}", compress_success_files.len())
-            .green()
-            .bold()
-    );
-    println!(
-        "| {} |",
-        format!("Error    ->  {: >4}", compress_error_files.len())
-            .red()
-            .bold()
-    );
-    println!("# ----------------- #");
-
-    // Show compress error directories
-    if !compress_error_files.is_empty() {
-        println!("{}", "The error directories are listed below".red().bold());
-        for error_file in compress_error_files {
-            println!("{}", error_file);
-        }
-    }
-
-    // Validate compressed files
-    if params.validate {
-        let output_dir = if let Some(v) = &params.output_dir {
-            v
-        } else {
-            &params.input_dir
-        };
-        validate_files(output_dir, compress_success_files);
     }
 }
 
@@ -173,34 +209,24 @@ pub fn execute(params: &CompressParams) {
 ///
 /// # Arguments
 ///
-/// * `current_dir` - Current directory
+/// * `params` - Compress params
 /// * `files` - Filepaths to validate
-fn validate_files(current_dir: &str, mut files: HashMap<String, bool>) {
+fn validate_files(params: &CompressParams, mut files: HashMap<String, bool>) {
+    let output_dir = if let Some(v) = &params.output_dir {
+        v
+    } else {
+        &params.input_dir
+    };
+
     let bar = get_progress_bar(files.len() as u64);
 
-    for (filename, compress_success) in files.iter_mut() {
-        let mut command = Command::new(RAR_PATH);
-        command.args(vec!["t", "--", filename.as_str()]);
-        command.current_dir(current_dir);
-
-        bar.set_message(format!("Validating {}", filename));
-
-        match command.execute() {
-            Ok(Some(exit_code)) => {
-                if exit_code == 0 {
-                    *compress_success = true;
-                    bar.set_message("OK");
-                } else {
-                    bar.set_message("NG");
-                }
-            }
-            _ => {
-                bar.set_message("NG");
-            }
+    match params.format_type.as_str() {
+        RAR_PATH => {
+            validate_rar(&mut files, &output_dir, &bar);
         }
-
-        bar.inc(1);
+        _ => panic!(),
     }
+
     bar.finish();
 
     let invalid_files: HashMap<_, _> = files.iter().filter(|&(_, valid)| !(*valid)).collect();
@@ -232,5 +258,37 @@ fn validate_files(current_dir: &str, mut files: HashMap<String, bool>) {
         for &invalid_file in invalid_files.keys() {
             println!("{}", invalid_file);
         }
+    }
+}
+
+/// Validate rar files
+///
+/// # Arguments
+///
+/// * `files` - Filepaths to validate
+/// * `current_dir` - Current directory
+fn validate_rar(files: &mut HashMap<String, bool>, current_dir: &str, bar: &ProgressBar) {
+    for (filename, compress_success) in files.iter_mut() {
+        let mut command = Command::new(RAR_PATH);
+        command.args(vec!["t", "--", filename.as_str()]);
+        command.current_dir(current_dir);
+
+        bar.set_message(format!("Validating {}", filename));
+
+        match command.execute() {
+            Ok(Some(exit_code)) => {
+                if exit_code == 0 {
+                    *compress_success = true;
+                    bar.set_message("OK");
+                } else {
+                    bar.set_message("NG");
+                }
+            }
+            _ => {
+                bar.set_message("NG");
+            }
+        }
+
+        bar.inc(1);
     }
 }
