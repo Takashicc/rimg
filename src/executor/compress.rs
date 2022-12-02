@@ -1,4 +1,4 @@
-use crate::constant::RAR_PATH;
+use crate::constant::{RAR_PATH, ZIP_EXTENSION};
 use crate::executor::utils::{ask, get_progress_bar, have_extension, is_dir, is_hidden, is_parent};
 use crate::params::compress::CompressParams;
 use colored::Colorize;
@@ -6,9 +6,13 @@ use core::panic;
 use execute::Execute;
 use indicatif::ProgressBar;
 use std::collections::HashMap;
-use std::path::Path;
+use std::fs::File;
+use std::io::{Read, Write};
+use std::path::{Path, PathBuf};
 use std::process::{self, Command};
 use walkdir::{DirEntry, WalkDir};
+use zip::write::FileOptions;
+use zip::{CompressionMethod, ZipWriter};
 
 /// Compress each directory and validate
 ///
@@ -95,7 +99,14 @@ fn compress_files(params: &CompressParams, directories: &Vec<DirEntry>) -> HashM
 
     match params.format_type.as_str() {
         RAR_PATH => compress_rar(
-            &directories,
+            directories,
+            params,
+            &bar,
+            &mut success_files,
+            &mut error_files,
+        ),
+        ZIP_EXTENSION => compress_zip(
+            directories,
             params,
             &bar,
             &mut success_files,
@@ -157,22 +168,11 @@ fn compress_rar(
     error_files: &mut Vec<String>,
 ) {
     for directory in directories {
-        let output_filepath = if let Some(v) = &params.output_dir {
-            Path::new(&v).join(format!("{}.rar", directory.file_name().to_string_lossy()))
-        } else {
-            Path::new(&params.input_dir)
-                .join(format!("{}.rar", directory.file_name().to_string_lossy()))
-        };
+        let output_filepath = _get_output_filepath(params, directory, RAR_PATH);
 
         let output_filename = output_filepath.file_name().unwrap().to_string_lossy();
         bar.set_message(format!("Compressing {}", &output_filename));
-        let mut entries = WalkDir::new(directory.path())
-            .max_depth(1)
-            .into_iter()
-            .filter_map(Result::ok)
-            .filter(|v| !is_hidden(v) && !is_parent(v.path(), &directory.path().to_string_lossy()))
-            .map(|v| v.file_name().to_string_lossy().to_string())
-            .collect::<Vec<String>>();
+        let mut entries = _get_string_entries(directory);
 
         let mut args = ["a", "-r", "-m5", "--"]
             .iter()
@@ -203,6 +203,91 @@ fn compress_rar(
 
         bar.inc(1);
     }
+}
+
+// TODO Write docs
+fn compress_zip(
+    directories: &Vec<DirEntry>,
+    params: &CompressParams,
+    bar: &ProgressBar,
+    success_files: &mut HashMap<String, bool>,
+    error_files: &mut Vec<String>,
+) {
+    for directory in directories {
+        let output_filepath = _get_output_filepath(params, directory, ZIP_EXTENSION);
+        let output_filename = output_filepath.file_name().unwrap().to_string_lossy();
+        bar.set_message(format!("Compressing {}", &output_filename));
+
+        let output_file = File::create(output_filepath).unwrap();
+        let mut zip = ZipWriter::new(output_file);
+        let zip_options = FileOptions::default()
+            .compression_method(CompressionMethod::Bzip2)
+            .unix_permissions(0o755);
+
+        let entries = _get_path_entries(directory);
+        // TODO Update success_files, error_files
+        for entry in entries {
+            let entry_filename = entry
+                .strip_prefix(directory.path())
+                .unwrap()
+                .to_string_lossy();
+
+            if entry.is_file() {
+                // If entry is file
+                zip.start_file(entry_filename, zip_options).unwrap();
+                let mut f = File::open(entry).unwrap();
+                let mut buffer = Vec::new();
+                f.read_to_end(&mut buffer).unwrap();
+                zip.write_all(&*buffer).unwrap();
+                buffer.clear();
+            } else if !entry_filename.is_empty() {
+                // If entry is directory and the name is not empty
+                zip.add_directory(entry_filename, zip_options).unwrap();
+            }
+        }
+
+        zip.finish().unwrap();
+    }
+}
+
+// TODO Write docs
+fn _get_output_filepath(params: &CompressParams, directory: &DirEntry, extension: &str) -> PathBuf {
+    let output_filepath = if let Some(v) = &params.output_dir {
+        Path::new(&v).join(format!(
+            "{}.{}",
+            directory.file_name().to_string_lossy(),
+            extension
+        ))
+    } else {
+        Path::new(&params.input_dir).join(format!(
+            "{}.{}",
+            directory.file_name().to_string_lossy(),
+            extension
+        ))
+    };
+
+    output_filepath
+}
+
+// TODO Write docs
+fn _get_string_entries(directory: &DirEntry) -> Vec<String> {
+    WalkDir::new(directory.path())
+        .max_depth(1)
+        .into_iter()
+        .filter_map(Result::ok)
+        .filter(|v| !is_hidden(v) && !is_parent(v.path(), &directory.path().to_string_lossy()))
+        .map(|v| v.file_name().to_string_lossy().to_string())
+        .collect::<Vec<String>>()
+}
+
+// TODO Write docs
+fn _get_path_entries(directory: &DirEntry) -> Vec<PathBuf> {
+    WalkDir::new(directory.path())
+        .into_iter()
+        .filter_map(Result::ok)
+        .filter(|v| !is_hidden(v) && !is_parent(v.path(), &directory.path().to_string_lossy()))
+        .map(|v| v.path().to_owned())
+        .collect::<Vec<PathBuf>>()
 }
 
 /// Validate files
