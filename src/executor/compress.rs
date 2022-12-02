@@ -83,7 +83,8 @@ pub fn execute(params: &CompressParams) {
     }
 }
 
-/// Validate files
+/// Compress the directories directly under the given directory
+/// and returns the name of the successfully compressed files
 ///
 /// # Arguments
 ///
@@ -205,7 +206,15 @@ fn compress_rar(
     }
 }
 
-// TODO Write docs
+/// Compress files to zip
+///
+/// # Arguments
+///
+/// * `directories` - Directories to compress
+/// * `params` - Compress params
+/// * `bar` - Progress bar
+/// * `success_files` - Successfully created files
+/// * `error_files` - Error files
 fn compress_zip(
     directories: &Vec<DirEntry>,
     params: &CompressParams,
@@ -269,7 +278,14 @@ fn _get_output_filepath(params: &CompressParams, directory: &DirEntry, extension
     output_filepath
 }
 
-// TODO Write docs
+/// Returns files/directories directly under the given directory
+///
+/// # Note
+/// This will **NOT** look recursively
+///
+/// # Arguments
+///
+/// * `directory` - Directory
 fn _get_string_entries(directory: &DirEntry) -> Vec<String> {
     WalkDir::new(directory.path())
         .max_depth(1)
@@ -280,7 +296,14 @@ fn _get_string_entries(directory: &DirEntry) -> Vec<String> {
         .collect::<Vec<String>>()
 }
 
-// TODO Write docs
+/// Returns files/directories directly under the given directory
+///
+/// # Note
+/// This will look recursively
+///
+/// # Arguments
+///
+/// * `directory` - Directory
 fn _get_path_entries(directory: &DirEntry) -> Vec<PathBuf> {
     WalkDir::new(directory.path())
         .into_iter()
