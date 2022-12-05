@@ -259,7 +259,15 @@ fn compress_zip(
     }
 }
 
-// TODO Write docs
+/// Returns output filepath
+/// If the ouput_dir was specified, use output_dir for the output filepath
+/// Otherwise, input_dir is used
+///
+/// # Arguments
+///
+/// * `params` - Compress params
+/// * `directory` - Directory
+/// * `extension` - Extension
 fn _get_output_filepath(params: &CompressParams, directory: &DirEntry, extension: &str) -> PathBuf {
     let output_filepath = if let Some(v) = &params.output_dir {
         Path::new(&v).join(format!(
@@ -375,6 +383,7 @@ fn validate_files(params: &CompressParams, mut files: HashMap<String, bool>) {
 ///
 /// * `files` - Filepaths to validate
 /// * `current_dir` - Current directory
+/// * `bar` - Progress bar
 fn validate_rar(files: &mut HashMap<String, bool>, current_dir: &str, bar: &ProgressBar) {
     for (filename, compress_success) in files.iter_mut() {
         let mut command = Command::new(RAR_PATH);
