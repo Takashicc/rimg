@@ -250,7 +250,7 @@ fn compress_zip(
                 zip.write_all(&*buffer).unwrap();
                 buffer.clear();
             } else if entry.is_dir() {
-                // If entry is directory and the name is not empty
+                // If entry is directory
                 zip.add_directory(entry_filename, zip_options).unwrap();
             }
         }
