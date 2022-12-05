@@ -249,7 +249,7 @@ fn compress_zip(
                 f.read_to_end(&mut buffer).unwrap();
                 zip.write_all(&*buffer).unwrap();
                 buffer.clear();
-            } else if !entry_filename.is_empty() {
+            } else if entry.is_dir() {
                 // If entry is directory and the name is not empty
                 zip.add_directory(entry_filename, zip_options).unwrap();
             }
