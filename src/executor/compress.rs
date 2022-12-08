@@ -58,7 +58,7 @@ pub fn execute(params: &CompressParams) {
 
         ask(params.yes);
 
-        validate_files(&params, files);
+        validate_files(params, files);
         process::exit(0);
     }
 
@@ -149,7 +149,7 @@ fn compress_files(params: &CompressParams, directories: &Vec<DirEntry>) -> HashM
         }
     }
 
-    return success_files;
+    success_files
 }
 
 /// Compress files to rar
@@ -170,16 +170,15 @@ fn compress_rar(
 ) {
     for directory in directories {
         let output_filepath = _get_output_filepath(params, directory, RAR_PATH);
-
         let output_filename = output_filepath.file_name().unwrap().to_string_lossy();
         bar.set_message(format!("Compressing {}", &output_filename));
-        let mut entries = _get_string_entries(directory);
 
         let mut args = ["a", "-r", "-m5", "--"]
             .iter()
             .map(|s| s.to_string())
             .collect::<Vec<String>>();
         args.push(output_filepath.to_string_lossy().to_string());
+        let mut entries = _get_string_entries(directory);
         args.append(&mut entries);
 
         let mut command = Command::new(RAR_PATH);
@@ -227,35 +226,65 @@ fn compress_zip(
         let output_filename = output_filepath.file_name().unwrap().to_string_lossy();
         bar.set_message(format!("Compressing {}", &output_filename));
 
-        let output_file = File::create(output_filepath).unwrap();
+        let output_file = match File::create(&output_filepath) {
+            Ok(v) => v,
+            Err(_) => {
+                error_files.push(output_filename.to_string());
+                continue;
+            }
+        };
         let mut zip = ZipWriter::new(output_file);
         let zip_options = FileOptions::default()
             .compression_method(CompressionMethod::Bzip2)
             .unix_permissions(0o755);
 
         let entries = _get_path_entries(directory);
-        // TODO Update success_files, error_files
         for entry in entries {
-            let entry_filename = entry
-                .strip_prefix(directory.path())
-                .unwrap()
-                .to_string_lossy();
+            let entry_filename = match entry.strip_prefix(directory.path()) {
+                Ok(v) => v.to_string_lossy(),
+                Err(_) => {
+                    error_files.push(output_filename.to_string());
+                    continue;
+                }
+            };
 
             if entry.is_file() {
                 // If entry is file
-                zip.start_file(entry_filename, zip_options).unwrap();
-                let mut f = File::open(entry).unwrap();
+                if zip.start_file(entry_filename, zip_options).is_err() {
+                    error_files.push(output_filename.to_string());
+                    continue;
+                }
+                let mut f = match File::open(entry) {
+                    Ok(v) => v,
+                    Err(_) => {
+                        error_files.push(output_filename.to_string());
+                        continue;
+                    }
+                };
                 let mut buffer = Vec::new();
-                f.read_to_end(&mut buffer).unwrap();
-                zip.write_all(&*buffer).unwrap();
+                if f.read_to_end(&mut buffer).is_err() {
+                    error_files.push(output_filename.to_string());
+                    continue;
+                }
+                if zip.write_all(&buffer).is_err() {
+                    error_files.push(output_filename.to_string());
+                    continue;
+                }
                 buffer.clear();
             } else if entry.is_dir() {
                 // If entry is directory
-                zip.add_directory(entry_filename, zip_options).unwrap();
+                if zip.add_directory(entry_filename, zip_options).is_err() {
+                    error_files.push(output_filename.to_string());
+                    continue;
+                }
             }
         }
 
-        zip.finish().unwrap();
+        if zip.finish().is_ok() {
+            success_files.insert(output_filename.to_string(), false);
+        } else {
+            error_files.push(output_filename.to_string());
+        }
     }
 }
 
@@ -338,7 +367,10 @@ fn validate_files(params: &CompressParams, mut files: HashMap<String, bool>) {
 
     match params.format_type.as_str() {
         RAR_PATH => {
-            validate_rar(&mut files, &output_dir, &bar);
+            validate_rar(&mut files, output_dir, &bar);
+        }
+        ZIP_EXTENSION => {
+            validate_zip(&mut files, output_dir, &bar);
         }
         _ => panic!(),
     }
@@ -408,4 +440,15 @@ fn validate_rar(files: &mut HashMap<String, bool>, current_dir: &str, bar: &Prog
 
         bar.inc(1);
     }
+}
+
+/// Validate zip files
+///
+/// # Arguments
+///
+/// * `files` - Filepaths to validate
+/// * `current_dir` - Current directory
+/// * `bar` - Progress bar
+fn validate_zip(files: &mut HashMap<String, bool>, current_dir: &str, bar: &ProgressBar) {
+    todo!()
 }
