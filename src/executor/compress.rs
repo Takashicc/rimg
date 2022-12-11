@@ -1,4 +1,4 @@
-use crate::constant::{RAR_PATH, ZIP_EXTENSION};
+use crate::constant::{RAR_EXTENSION, ZIP_EXTENSION};
 use crate::executor::utils::{ask, get_progress_bar, have_extension, is_dir, is_hidden, is_parent};
 use crate::params::compress::CompressParams;
 use colored::Colorize;
@@ -21,8 +21,8 @@ use zip::{CompressionMethod, ZipWriter};
 /// * `params` - Compress params
 pub fn execute(params: &CompressParams) {
     // Check rar executable
-    if params.format_type == RAR_PATH
-        && Command::new(RAR_PATH)
+    if params.format_type == RAR_EXTENSION
+        && Command::new(RAR_EXTENSION)
             .execute_check_exit_status_code(0)
             .is_err()
     {
@@ -99,7 +99,7 @@ fn compress_files(params: &CompressParams, directories: &Vec<DirEntry>) -> HashM
     let mut error_files = Vec::<String>::new();
 
     match params.format_type.as_str() {
-        RAR_PATH => compress_rar(
+        RAR_EXTENSION => compress_rar(
             directories,
             params,
             &bar,
@@ -169,7 +169,7 @@ fn compress_rar(
     error_files: &mut Vec<String>,
 ) {
     for directory in directories {
-        let output_filepath = _get_output_filepath(params, directory, RAR_PATH);
+        let output_filepath = _get_output_filepath(params, directory, RAR_EXTENSION);
         let output_filename = output_filepath.file_name().unwrap().to_string_lossy();
         bar.set_message(format!("Compressing {}", &output_filename));
 
@@ -181,7 +181,7 @@ fn compress_rar(
         let mut entries = _get_string_entries(directory);
         args.append(&mut entries);
 
-        let mut command = Command::new(RAR_PATH);
+        let mut command = Command::new(RAR_EXTENSION);
         command.args(args);
         command.current_dir(directory.path().to_string_lossy().to_string());
 
@@ -366,7 +366,7 @@ fn validate_files(params: &CompressParams, mut files: HashMap<String, bool>) {
     let bar = get_progress_bar(files.len() as u64);
 
     match params.format_type.as_str() {
-        RAR_PATH => {
+        RAR_EXTENSION => {
             validate_rar(&mut files, output_dir, &bar);
         }
         ZIP_EXTENSION => {
@@ -418,7 +418,7 @@ fn validate_files(params: &CompressParams, mut files: HashMap<String, bool>) {
 /// * `bar` - Progress bar
 fn validate_rar(files: &mut HashMap<String, bool>, current_dir: &str, bar: &ProgressBar) {
     for (filename, compress_success) in files.iter_mut() {
-        let mut command = Command::new(RAR_PATH);
+        let mut command = Command::new(RAR_EXTENSION);
         command.args(vec!["t", "--", filename.as_str()]);
         command.current_dir(current_dir);
 
