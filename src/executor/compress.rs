@@ -12,7 +12,7 @@ use std::path::{Path, PathBuf};
 use std::process::{self, Command};
 use walkdir::{DirEntry, WalkDir};
 use zip::write::FileOptions;
-use zip::{CompressionMethod, ZipWriter};
+use zip::{CompressionMethod, ZipArchive, ZipWriter};
 
 /// Compress each directory and validate
 ///
@@ -450,5 +450,26 @@ fn validate_rar(files: &mut HashMap<String, bool>, current_dir: &str, bar: &Prog
 /// * `current_dir` - Current directory
 /// * `bar` - Progress bar
 fn validate_zip(files: &mut HashMap<String, bool>, current_dir: &str, bar: &ProgressBar) {
-    todo!()
+    for (filename, compress_success) in files.iter_mut() {
+        let fullpath = Path::new(current_dir).join(filename);
+        bar.set_message(format!("Validating {}", filename));
+
+        let file = match File::open(fullpath) {
+            Ok(v) => v,
+            Err(_) => {
+                bar.set_message("NG");
+                bar.inc(1);
+                continue;
+            }
+        };
+        let zip_archive = ZipArchive::new(file);
+        if zip_archive.is_ok() {
+            *compress_success = true;
+            bar.set_message("OK");
+        } else {
+            bar.set_message("NG");
+        }
+
+        bar.inc(1);
+    }
 }
