@@ -1,4 +1,4 @@
-use crate::constant::{RAR_PATH, ZIP_EXTENSION};
+use crate::constant::{RAR_EXTENSION, ZIP_EXTENSION};
 use std::fs;
 
 /// Check dir exists or not
@@ -21,7 +21,7 @@ pub fn dir_exists(s: &str) -> Result<String, String> {
 ///
 /// * `s` - Given arg
 pub fn format_type_check(s: &str) -> Result<String, String> {
-    if s == RAR_PATH || s == ZIP_EXTENSION {
+    if s == RAR_EXTENSION || s == ZIP_EXTENSION {
         Ok(s.to_owned())
     } else {
         Err(format!(
