@@ -2,7 +2,6 @@ use crate::constant::{RAR_EXTENSION, ZIP_EXTENSION};
 use crate::executor::utils::{ask, get_progress_bar, have_extension, is_dir, is_hidden, is_parent};
 use crate::params::compress::CompressParams;
 use colored::Colorize;
-use core::panic;
 use execute::Execute;
 use indicatif::ProgressBar;
 use std::collections::HashMap;
@@ -71,7 +70,7 @@ pub fn execute(params: &CompressParams) {
 
     if directories.is_empty() {
         eprintln!("{}", "There are no directories to be executed".red().bold());
-        println!("Abort...");
+        eprintln!("Abort...");
         process::exit(0);
     }
 
@@ -113,7 +112,7 @@ fn compress_files(params: &CompressParams, directories: &Vec<DirEntry>) -> HashM
             &mut success_files,
             &mut error_files,
         ),
-        _ => panic!(),
+        _ => unimplemented!(),
     }
 
     bar.finish();
@@ -372,7 +371,7 @@ fn validate_files(params: &CompressParams, mut files: HashMap<String, bool>) {
         ZIP_EXTENSION => {
             validate_zip(&mut files, output_dir, &bar);
         }
-        _ => panic!(),
+        _ => unimplemented!(),
     }
 
     bar.finish();
