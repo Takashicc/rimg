@@ -28,6 +28,6 @@ fn main() {
         Some(Commands::Compress(v)) => {
             executor::compress::execute(v);
         }
-        None => panic!("No sub command provided!"),
+        None => eprintln!("No subcommand provided!\nCheck the subcommands with `rimg -h`"),
     }
 }

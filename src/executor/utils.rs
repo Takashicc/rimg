@@ -87,7 +87,7 @@ pub fn ask(yes: bool) {
     if !yes {
         let answer = Question::new("Are you sure to execute? (y/n):").confirm();
         if answer == Answer::NO {
-            println!("Abort...");
+            eprintln!("Abort...");
             process::exit(0);
         }
     }
