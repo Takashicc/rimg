@@ -2,7 +2,6 @@ use crate::{
     executor::utils::{ask, gen_random_path, get_progress_bar, is_dir, is_file, is_hidden},
     params::rename::RenameParams,
 };
-use human_sort::compare;
 use std::process;
 use std::{ffi::OsStr, fs, path::PathBuf};
 use walkdir::{DirEntry, WalkDir};
@@ -44,11 +43,7 @@ pub fn execute(params: &RenameParams) {
             .collect::<Vec<PathBuf>>();
 
         // Sort with human-friendly order
-        files.sort_by(|a, b| {
-            let a = a.to_string_lossy().to_string();
-            let b = b.to_string_lossy().to_string();
-            compare(&a, &b)
-        });
+        sort_numerically(&mut files);
 
         let dir_name = entry.file_name().to_string_lossy();
         let extension_types = params.extensions.join(", ").to_lowercase();
@@ -131,4 +126,16 @@ fn file_rename(from_path: &PathBuf, to_path: &PathBuf) {
             eprintln!("Try again...");
         }
     }
+}
+
+fn sort_numerically(filenames: &mut [PathBuf]) {
+    filenames.sort_unstable_by_key(|f| -> u32 {
+        return f
+            .to_string_lossy()
+            .chars()
+            .filter(|c| c.is_ascii_digit())
+            .collect::<String>()
+            .parse::<u32>()
+            .unwrap_or(0);
+    });
 }
