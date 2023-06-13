@@ -42,8 +42,7 @@ pub fn execute(params: &RenameParams) {
             .map(|v| v.into_path())
             .collect::<Vec<PathBuf>>();
 
-        // Sort with human-friendly order
-        sort_numerically(&mut files);
+        sort_natural(&mut files);
 
         let dir_name = entry.file_name().to_string_lossy();
         let extension_types = params.extensions.join(", ").to_lowercase();
@@ -128,14 +127,72 @@ fn file_rename(from_path: &PathBuf, to_path: &PathBuf) {
     }
 }
 
-fn sort_numerically(filenames: &mut [PathBuf]) {
-    filenames.sort_unstable_by_key(|f| -> u32 {
-        return f
-            .to_string_lossy()
-            .chars()
-            .filter(|c| c.is_ascii_digit())
-            .collect::<String>()
-            .parse::<u32>()
-            .unwrap_or(0);
+fn sort_natural(files: &mut [PathBuf]) {
+    files.sort_by(|a, b| {
+        let a_key = generate_natural_sort_key(a.to_string_lossy().to_string().as_str());
+        let b_key = generate_natural_sort_key(b.to_string_lossy().to_string().as_str());
+
+        let mut cmp_result = std::cmp::Ordering::Equal;
+        for (a_part, b_part) in a_key.iter().zip(b_key.iter()) {
+            let text_cmp_result = a_part.text.cmp(&b_part.text);
+            if text_cmp_result != std::cmp::Ordering::Equal {
+                cmp_result = text_cmp_result;
+                break;
+            }
+
+            let number_cmp_result = a_part.number.cmp(&b_part.number);
+            if number_cmp_result != std::cmp::Ordering::Equal {
+                cmp_result = number_cmp_result;
+                break;
+            }
+        }
+
+        cmp_result
+    })
+}
+
+struct NaturalSortKeyPart {
+    text: String,
+    number: Option<usize>,
+}
+
+fn generate_natural_sort_key(s: &str) -> Vec<NaturalSortKeyPart> {
+    let mut key = vec![];
+    let mut last = 0;
+    for (start, end) in extract_number_positions(s) {
+        key.push(NaturalSortKeyPart {
+            text: s[last..start].to_string(),
+            number: s[start..end].parse::<usize>().ok(),
+        });
+        last = end;
+    }
+
+    key.push(NaturalSortKeyPart {
+        text: s[last..].to_string(),
+        number: None,
     });
+
+    key
+}
+
+fn extract_number_positions(s: &str) -> Vec<(usize, usize)> {
+    let mut positions = vec![];
+    let mut start_index = None;
+
+    for (i, c) in s.char_indices() {
+        if c.is_ascii_digit() {
+            if start_index.is_none() {
+                start_index = Some(i);
+            }
+        } else if let Some(start) = start_index {
+            positions.push((start, i));
+            start_index = None;
+        }
+    }
+
+    if let Some(start) = start_index {
+        positions.push((start, s.len()))
+    }
+
+    positions
 }
