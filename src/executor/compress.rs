@@ -4,11 +4,13 @@ use crate::params::compress::CompressParams;
 use colored::Colorize;
 use execute::Execute;
 use indicatif::ProgressBar;
+use rayon::prelude::*;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::{self, Command};
+use std::sync::{Arc, Mutex};
 use walkdir::{DirEntry, WalkDir};
 use zip::write::FileOptions;
 use zip::{CompressionMethod, ZipArchive, ZipWriter};
@@ -94,30 +96,21 @@ fn compress_files(params: &CompressParams, directories: &Vec<DirEntry>) -> HashM
     println!("{} directories will be executed", execute_target_len);
 
     let bar = get_progress_bar(execute_target_len);
-    let mut success_files = HashMap::<String, bool>::new();
-    let mut error_files = Vec::<String>::new();
+
+    let success_files = Arc::new(Mutex::new(HashMap::<String, bool>::new()));
+    let error_files = Arc::new(Mutex::new(Vec::<String>::new()));
 
     match params.format_type.as_str() {
-        RAR_EXTENSION => compress_rar(
-            directories,
-            params,
-            &bar,
-            &mut success_files,
-            &mut error_files,
-        ),
-        ZIP_EXTENSION => compress_zip(
-            directories,
-            params,
-            &bar,
-            &mut success_files,
-            &mut error_files,
-        ),
+        RAR_EXTENSION => compress_rar(directories, params, &bar, &success_files, &error_files),
+        ZIP_EXTENSION => compress_zip(directories, params, &bar, &success_files, &error_files),
         _ => unimplemented!(),
     }
 
     bar.finish();
 
     // Show compression result
+    let success_files_clone = success_files.lock().unwrap().clone();
+    let error_files_clone = error_files.lock().unwrap().clone();
     println!("{}", "Compression Result".green().bold());
     println!("# ----------------- #");
     println!(
@@ -128,27 +121,27 @@ fn compress_files(params: &CompressParams, directories: &Vec<DirEntry>) -> HashM
     );
     println!(
         "| {} |",
-        format!("Created  ->  {: >4}", success_files.len())
+        format!("Created  ->  {: >4}", success_files_clone.len())
             .green()
             .bold()
     );
     println!(
         "| {} |",
-        format!("Error    ->  {: >4}", error_files.len())
+        format!("Error    ->  {: >4}", error_files_clone.len())
             .red()
             .bold()
     );
     println!("# ----------------- #");
 
     // Show compress error directories
-    if !error_files.is_empty() {
+    if !error_files_clone.is_empty() {
         println!("{}", "The error directories are listed below".red().bold());
-        for error_file in error_files {
+        for error_file in error_files_clone {
             println!("{}", error_file);
         }
     }
 
-    success_files
+    success_files_clone
 }
 
 /// Compress files to rar
@@ -164,10 +157,10 @@ fn compress_rar(
     directories: &Vec<DirEntry>,
     params: &CompressParams,
     bar: &ProgressBar,
-    success_files: &mut HashMap<String, bool>,
-    error_files: &mut Vec<String>,
+    success_files: &Arc<Mutex<HashMap<String, bool>>>,
+    error_files: &Arc<Mutex<Vec<String>>>,
 ) {
-    for directory in directories {
+    directories.par_iter().for_each(|directory| {
         let output_filepath = _get_output_filepath(params, directory, RAR_EXTENSION);
         let output_filename = output_filepath.file_name().unwrap().to_string_lossy();
         bar.set_message(format!("Compressing {}", &output_filename));
@@ -187,21 +180,24 @@ fn compress_rar(
         match command.execute() {
             Ok(Some(exit_code)) => {
                 if exit_code == 0 {
+                    let mut success_files = success_files.lock().unwrap();
                     success_files.insert(output_filename.to_string(), false);
                     bar.set_message(format!("Compressed {}!", &output_filename));
                 } else {
+                    let mut error_files = error_files.lock().unwrap();
                     error_files.push(output_filename.to_string());
                     bar.set_message(format!("Failed to compress {}!", &output_filename));
                 }
             }
             _ => {
+                let mut error_files = error_files.lock().unwrap();
                 error_files.push(output_filename.to_string());
                 bar.set_message(format!("Failed to compress {}!", &output_filename));
             }
         };
 
         bar.inc(1);
-    }
+    });
 }
 
 /// Compress files to zip
@@ -217,8 +213,8 @@ fn compress_zip(
     directories: &Vec<DirEntry>,
     params: &CompressParams,
     bar: &ProgressBar,
-    success_files: &mut HashMap<String, bool>,
-    error_files: &mut Vec<String>,
+    success_files: &Arc<Mutex<HashMap<String, bool>>>,
+    error_files: &Arc<Mutex<Vec<String>>>,
 ) {
     for directory in directories {
         let output_filepath = _get_output_filepath(params, directory, ZIP_EXTENSION);
@@ -228,6 +224,7 @@ fn compress_zip(
         let output_file = match File::create(&output_filepath) {
             Ok(v) => v,
             Err(_) => {
+                let mut error_files = error_files.lock().unwrap();
                 error_files.push(output_filename.to_string());
                 continue;
             }
@@ -242,6 +239,7 @@ fn compress_zip(
             let entry_filename = match entry.strip_prefix(directory.path()) {
                 Ok(v) => v.to_string_lossy(),
                 Err(_) => {
+                    let mut error_files = error_files.lock().unwrap();
                     error_files.push(output_filename.to_string());
                     continue;
                 }
@@ -250,22 +248,26 @@ fn compress_zip(
             if entry.is_file() {
                 // If entry is file
                 if zip.start_file(entry_filename, zip_options).is_err() {
+                    let mut error_files = error_files.lock().unwrap();
                     error_files.push(output_filename.to_string());
                     continue;
                 }
                 let mut f = match File::open(entry) {
                     Ok(v) => v,
                     Err(_) => {
+                        let mut error_files = error_files.lock().unwrap();
                         error_files.push(output_filename.to_string());
                         continue;
                     }
                 };
                 let mut buffer = Vec::new();
                 if f.read_to_end(&mut buffer).is_err() {
+                    let mut error_files = error_files.lock().unwrap();
                     error_files.push(output_filename.to_string());
                     continue;
                 }
                 if zip.write_all(&buffer).is_err() {
+                    let mut error_files = error_files.lock().unwrap();
                     error_files.push(output_filename.to_string());
                     continue;
                 }
@@ -273,6 +275,7 @@ fn compress_zip(
             } else if entry.is_dir() {
                 // If entry is directory
                 if zip.add_directory(entry_filename, zip_options).is_err() {
+                    let mut error_files = error_files.lock().unwrap();
                     error_files.push(output_filename.to_string());
                     continue;
                 }
@@ -280,8 +283,10 @@ fn compress_zip(
         }
 
         if zip.finish().is_ok() {
+            let mut success_files = success_files.lock().unwrap();
             success_files.insert(output_filename.to_string(), false);
         } else {
+            let mut error_files = error_files.lock().unwrap();
             error_files.push(output_filename.to_string());
         }
     }
