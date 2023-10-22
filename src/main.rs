@@ -17,6 +17,8 @@ enum Commands {
     Rename(params::rename::RenameParams),
     /// Compress files in each directory
     Compress(params::compress::CompressParams),
+    /// TODO
+    Convert(params::convert::ConvertParams),
 }
 
 fn main() {
@@ -27,6 +29,9 @@ fn main() {
         }
         Some(Commands::Compress(v)) => {
             executor::compress::execute(v);
+        }
+        Some(Commands::Convert(v)) => {
+            executor::convert::execute(v);
         }
         None => eprintln!("No subcommand provided!\nCheck the subcommands with `rimg -h`"),
     }
