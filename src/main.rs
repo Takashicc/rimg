@@ -1,7 +1,7 @@
-mod constant;
+mod constants;
 mod executor;
 mod params;
-mod validator;
+mod validation;
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]

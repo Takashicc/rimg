@@ -1,12 +1,12 @@
-use crate::constant::RAR_EXTENSION;
-use crate::validator;
+use crate::constants::file::RAR_EXTENSION;
+use crate::validation;
 use clap::Parser;
 
 #[derive(Parser)]
 /// Params for compress subcommand
 pub struct CompressParams {
     #[arg(
-        value_parser = validator::dir_exists,
+        value_parser = validation::filepath::dir_exists,
         help = "Input directory"
     )]
     pub input_dir: String,
@@ -14,7 +14,7 @@ pub struct CompressParams {
     #[arg(
         short,
         long,
-        value_parser = validator::dir_exists,
+        value_parser = validation::filepath::dir_exists,
         help = "Output directory"
     )]
     pub output_dir: Option<String>,
@@ -23,7 +23,7 @@ pub struct CompressParams {
         short,
         long,
         default_value_t = String::from(RAR_EXTENSION),
-        value_parser = validator::format_type_check,
+        value_parser = validation::filepath::format_type_check,
         help = "Compress file format type"
     )]
     pub format_type: String,

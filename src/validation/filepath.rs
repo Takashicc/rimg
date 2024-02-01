@@ -1,4 +1,4 @@
-use crate::constant::{RAR_EXTENSION, ZIP_EXTENSION};
+use crate::constants::file::{RAR_EXTENSION, ZIP_EXTENSION};
 use std::fs;
 
 /// Check dir exists or not
