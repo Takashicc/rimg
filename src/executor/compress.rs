@@ -1,4 +1,4 @@
-use crate::constant::{RAR_EXTENSION, ZIP_EXTENSION};
+use crate::constants::file::{RAR_EXTENSION, ZIP_EXTENSION};
 use crate::executor::utils::{ask, get_progress_bar, have_extension, is_dir, is_hidden, is_parent};
 use crate::params::compress::CompressParams;
 use colored::Colorize;
@@ -359,8 +359,8 @@ fn validate_files(params: &CompressParams, files: &HashMap<String, bool>) {
     let bar = get_progress_bar(files.len() as u64);
 
     let validation_result = match params.format_type.as_str() {
-        RAR_EXTENSION => validate_rar(&files, output_dir, &bar),
-        ZIP_EXTENSION => validate_zip(&files, output_dir, &bar),
+        RAR_EXTENSION => validate_rar(files, output_dir, &bar),
+        ZIP_EXTENSION => validate_zip(files, output_dir, &bar),
         _ => unimplemented!(),
     };
 

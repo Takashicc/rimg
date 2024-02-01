@@ -1,11 +1,11 @@
-use crate::validator;
+use crate::validation;
 use clap::{value_parser, Parser};
 
 #[derive(Parser)]
 /// Params for rename subcommand
 pub struct RenameParams {
     #[arg(
-        value_parser = validator::dir_exists,
+        value_parser = validation::filepath::dir_exists,
         help = "Target directory"
     )]
     pub input_dir: String,
@@ -23,7 +23,7 @@ pub struct RenameParams {
         short,
         long,
         default_values = vec!["jpg", "jpeg"],
-        value_parser = validator::extension_check,
+        value_parser = validation::filepath::extension_check,
         help = "Target file extension"
     )]
     pub extensions: Vec<String>,
