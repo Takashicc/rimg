@@ -500,9 +500,9 @@ fn validate_zip_entries(filepath: &PathBuf) -> Result<bool, String> {
         };
 
         loop {
-            match file.read(&mut buffer) {
-                Ok(0) => break,
+            match file.read_exact(&mut buffer) {
                 Ok(_) => continue,
+                Err(e) if e.kind() == std::io::ErrorKind::UnexpectedEof => break,
                 Err(e) => return Err(e.to_string()),
             }
         }
