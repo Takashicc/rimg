@@ -20,6 +20,22 @@
         "digest"
       ],
       "automerge": true
+    },
+    {
+      "matchManagers": "github-actions",
+      "matchUpdateTypes": [
+        "patch",
+        "minor"
+      ],
+      "groupName": "github actions deps"
+    },
+    {
+      "matchManagers": "rust",
+      "matchUpdateTypes": [
+        "patch",
+        "minor"
+      ],
+      "groupName": "rust deps"
     }
   ]
 }
