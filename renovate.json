@@ -30,7 +30,7 @@
       "groupName": "github actions deps"
     },
     {
-      "matchManagers": "rust",
+      "matchManagers": "cargo",
       "matchUpdateTypes": [
         "patch",
         "minor"
