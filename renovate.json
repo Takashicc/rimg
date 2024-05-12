@@ -8,6 +8,9 @@
   "prConcurrentLimit": 5,
   "minimumReleaseAge": "10 days",
   "platformCommit": true,
+  "reviewers": [
+    "Takashicc"
+  ],
   "packageRules": [
     {
       "matchUpdateTypes": [
