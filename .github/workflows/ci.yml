@@ -1,58 +1,30 @@
-name: Build & Test
+name: CI
 
 on:
   push:
-
-env:
-  CARGO_TERM_COLOR: always
+    branches: main
+  pull_request:
+    types:
+      - opened
+      - synchronize
 
 jobs:
-  build:
-    strategy:
-      matrix:
-        target:
-          - x86_64-unknown-linux-musl
-        include:
-          - target: x86_64-unknown-linux-musl
-            os: ubuntu-latest
-
+  ci:
     runs-on: ubuntu-latest
-
+    timeout-minutes: 10
     steps:
-      - name: Clone repository
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - name: Cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-
-
-      - name: Install musl tools
-        if: matrix.target == 'x86_64-unknown-linux-musl'
+      - name: Setup Rust
         run: |
-          sudo apt install -qq -y musl-tools --no-install-recommends
+          rustup component add clippy
+          rustup component add rustfmt
 
-      - name: Setup Rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          target: ${{ matrix.target }}
-          override: true
+      - name: Format
+        run: cargo fmt --all -- --check
+
+      - name: Clippy
+        run: cargo clippy -- -D warnings
 
       - name: Test
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-
-      - name: Build
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
+        run: cargo test
