@@ -96,7 +96,7 @@ pub fn execute(params: &RenameParams) {
                         process::exit(1);
                     }
                 };
-                files[index] = random_path.clone();
+                files[index].clone_from(&random_path);
                 file_rename(to_path, &random_path);
             }
 
