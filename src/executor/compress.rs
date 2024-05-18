@@ -12,7 +12,7 @@ use std::path::{Path, PathBuf};
 use std::process::{self, Command};
 use std::sync::{Arc, Mutex};
 use walkdir::{DirEntry, WalkDir};
-use zip::write::FileOptions;
+use zip::write::SimpleFileOptions;
 use zip::{CompressionMethod, ZipArchive, ZipWriter};
 
 /// Compress each directory and validate
@@ -219,7 +219,7 @@ fn compress_zip(
             }
         };
         let mut zip = ZipWriter::new(output_file);
-        let zip_options = FileOptions::default()
+        let zip_options = SimpleFileOptions::default()
             .compression_method(CompressionMethod::Bzip2)
             .unix_permissions(0o755);
 
