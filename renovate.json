@@ -1,43 +1,6 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended",
-    "docker:pinDigests",
-    "helpers:pinGitHubActionDigests"
-  ],
-  "timezone": "Asia/Tokyo",
-  "dependencyDashboard": false,
-  "prConcurrentLimit": 5,
-  "minimumReleaseAge": "10 days",
-  "platformCommit": true,
-  "reviewers": [
-    "Takashicc"
-  ],
-  "packageRules": [
-    {
-      "matchUpdateTypes": [
-        "minor",
-        "patch",
-        "pin",
-        "digest"
-      ],
-      "automerge": true
-    },
-    {
-      "matchManagers": "github-actions",
-      "matchUpdateTypes": [
-        "patch",
-        "minor"
-      ],
-      "groupName": "github actions deps"
-    },
-    {
-      "matchManagers": "cargo",
-      "matchUpdateTypes": [
-        "patch",
-        "minor"
-      ],
-      "groupName": "rust deps"
-    }
+    "local>Takashicc/renovate-config"
   ]
 }
