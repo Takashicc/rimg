@@ -554,6 +554,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "memchr"
+version = "2.7.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6c8640c5d730cb13ebd907d8d04b52f55ac9a2eec55b440c8892f40d56c76c1d"
+
+[[package]]
 name = "memoffset"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1094,9 +1100,9 @@ dependencies = [
 
 [[package]]
 name = "zip"
-version = "2.0.0"
+version = "2.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fccb210625924ecbbe92f9bb497d04b167b64fe5540cec75f10b16e0c51ee92b"
+checksum = "e2568cd0f20e86cd9a7349fe05178f7bd22f22724678448ae5a9bac266df2689"
 dependencies = [
  "aes",
  "arbitrary",
@@ -1110,6 +1116,7 @@ dependencies = [
  "hmac",
  "indexmap",
  "lzma-rs",
+ "memchr",
  "pbkdf2",
  "rand",
  "sha1",
