@@ -7,9 +7,9 @@ use std::fs;
 ///
 /// * `s` - Given arg
 pub fn dir_exists(s: &str) -> Result<String, String> {
-    let metadata = fs::metadata(s).map_err(|_| format!("`{}` isn't a directory", s))?;
+    let metadata = fs::metadata(s).map_err(|_| format!("`{s}` isn't a directory"))?;
     if !metadata.is_dir() {
-        Err(format!("`{}` isn't a directory", s))
+        Err(format!("`{s}` isn't a directory"))
     } else {
         Ok(s.to_owned())
     }
@@ -25,8 +25,7 @@ pub fn format_type_check(s: &str) -> Result<String, String> {
         Ok(s.to_owned())
     } else {
         Err(format!(
-            "`{}` isn't supported format type\nCurrently supports `rar` and `zip`",
-            s
+            "`{s}` isn't supported format type\nCurrently supports `rar` and `zip`"
         ))
     }
 }
@@ -40,7 +39,7 @@ pub fn extension_check(s: &str) -> Result<String, String> {
     if s.is_empty() {
         Err("Empty extension is not valid".to_string())
     } else if s.len() > 5 {
-        Err(format!("`{}` Extension is too long\nMax length is 4", s))
+        Err(format!("`{s}` Extension is too long\nMax length is 4"))
     } else {
         Ok(s.to_owned())
     }

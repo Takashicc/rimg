@@ -19,7 +19,7 @@ pub fn execute(params: &RenameParams) {
         .collect::<Vec<DirEntry>>();
 
     let directories_count = directories.len();
-    println!("{} directories will be executed", directories_count);
+    println!("{directories_count} directories will be executed");
 
     ask(params.yes);
 
@@ -47,20 +47,14 @@ pub fn execute(params: &RenameParams) {
         let dir_name = entry.file_name().to_string_lossy();
         let extension_types = params.extensions.join(", ").to_lowercase();
         if files.is_empty() {
-            println!(
-                "There are no {} files in {} directory",
-                extension_types, dir_name
-            );
+            println!("There are no {extension_types} files in {dir_name} directory");
             continue;
         } else {
-            println!(
-                "Renaming {} files in {} directory",
-                extension_types, dir_name
-            );
+            println!("Renaming {extension_types} files in {dir_name} directory");
         }
 
         let bar = get_progress_bar(files.len() as u64);
-        bar.set_message(format!("Renaming {}", dir_name));
+        bar.set_message(format!("Renaming {dir_name}"));
 
         let mut seq_index = params.initial;
         for i in 0..files.len() {
@@ -105,7 +99,7 @@ pub fn execute(params: &RenameParams) {
             bar.inc(1);
         }
 
-        bar.set_message(format!("Rename complete {}", dir_name));
+        bar.set_message(format!("Rename complete {dir_name}"));
         bar.finish();
     }
 }
@@ -121,7 +115,7 @@ fn file_rename(from_path: &PathBuf, to_path: &PathBuf) {
         if fs::rename(from_path, to_path).is_ok() {
             break;
         } else {
-            eprintln!("Error! Renaming {:?} to {:?}", from_path, to_path);
+            eprintln!("Error! Renaming {from_path:?} to {to_path:?}");
             eprintln!("Try again...");
         }
     }

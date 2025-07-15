@@ -69,7 +69,7 @@ pub fn gen_random_path(parent: &Path, ext: &str) -> PathBuf {
     let mut random_path;
     loop {
         let uuid = Uuid::new_v4().to_string();
-        random_path = parent.join(format!("{}.{}", uuid, ext));
+        random_path = parent.join(format!("{uuid}.{ext}"));
         if !random_path.exists() {
             break;
         }
