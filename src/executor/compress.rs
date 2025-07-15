@@ -93,7 +93,7 @@ pub fn execute(params: &CompressParams) {
 /// * `directories` - Directories to compress
 fn compress_files(params: &CompressParams, directories: &Vec<DirEntry>) -> HashMap<String, bool> {
     let execute_target_len = directories.len() as u64;
-    println!("{} directories will be executed", execute_target_len);
+    println!("{execute_target_len} directories will be executed");
 
     let bar = get_progress_bar(execute_target_len);
 
@@ -117,7 +117,7 @@ fn compress_files(params: &CompressParams, directories: &Vec<DirEntry>) -> HashM
         "Total".blue().bold(),
         "Success".green().bold(),
         "Error".red().bold(),
-        format!("{}", execute_target_len).blue().bold(),
+        format!("{execute_target_len}").blue().bold(),
         format!("{}", success_files_clone.len()).green().bold(),
         format!("{}", error_files_clone.len()).red().bold(),
     );
@@ -126,7 +126,7 @@ fn compress_files(params: &CompressParams, directories: &Vec<DirEntry>) -> HashM
     if !error_files_clone.is_empty() {
         println!("{}", "The error directories are listed below".red().bold());
         for error_file in error_files_clone {
-            println!("{}", error_file);
+            println!("{error_file}");
         }
     }
 
@@ -380,14 +380,14 @@ fn validate_files(params: &CompressParams, files: &HashMap<String, bool>) {
         "Valid".green().bold(),
         "Invalid".red().bold(),
         format!("{}", validation_result.len()).blue().bold(),
-        format!("{}", valid_files_len).green().bold(),
-        format!("{}", invalid_files_len).red().bold()
+        format!("{valid_files_len}").green().bold(),
+        format!("{invalid_files_len}").red().bold()
     );
 
     if !invalid_files.is_empty() {
         println!("{}", "The corrupted files are listed below".red().bold());
         for &invalid_file in invalid_files.keys() {
-            println!("{}", invalid_file);
+            println!("{invalid_file}");
         }
     }
 }
@@ -415,7 +415,7 @@ fn validate_rar(
         command.args(vec!["t", "--", filename.as_str()]);
         command.current_dir(current_dir);
 
-        bar.set_message(format!("Validating {}", filename));
+        bar.set_message(format!("Validating {filename}"));
 
         let is_valid = match command.execute() {
             Ok(Some(exit_code)) => {
@@ -462,12 +462,12 @@ fn validate_zip(
 
     files.par_iter().for_each(|(filename, _)| {
         let fullpath = Path::new(current_dir).join(filename);
-        bar.set_message(format!("Validating {}", filename));
+        bar.set_message(format!("Validating {filename}"));
 
         let is_valid = match validate_zip_entries(&fullpath) {
             Ok(v) => v,
             Err(e) => {
-                eprintln!("filename: {}, error: {}", filename, e);
+                eprintln!("filename: {filename}, error: {e}");
                 false
             }
         };
