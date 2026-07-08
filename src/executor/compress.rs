@@ -167,16 +167,10 @@ fn compress_rar(
         command.current_dir(directory.path().to_string_lossy().to_string());
 
         match command.execute() {
-            Ok(Some(exit_code)) => {
-                if exit_code == 0 {
-                    let mut success_files = success_files.lock().unwrap();
-                    success_files.insert(output_filename.to_string(), false);
-                    bar.set_message(format!("Compressed {}!", &output_filename));
-                } else {
-                    let mut error_files = error_files.lock().unwrap();
-                    error_files.push(output_filename.to_string());
-                    bar.set_message(format!("Failed to compress {}!", &output_filename));
-                }
+            Ok(Some(0)) => {
+                let mut success_files = success_files.lock().unwrap();
+                success_files.insert(output_filename.to_string(), false);
+                bar.set_message(format!("Compressed {}!", &output_filename));
             }
             _ => {
                 let mut error_files = error_files.lock().unwrap();
@@ -418,14 +412,9 @@ fn validate_rar(
         bar.set_message(format!("Validating {filename}"));
 
         let is_valid = match command.execute() {
-            Ok(Some(exit_code)) => {
-                if exit_code == 0 {
-                    bar.set_message("OK");
-                    true
-                } else {
-                    bar.set_message("NG");
-                    false
-                }
+            Ok(Some(0)) => {
+                bar.set_message("OK");
+                true
             }
             _ => {
                 bar.set_message("NG");
