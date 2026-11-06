@@ -152,7 +152,7 @@ fn compress_rar(
     directories.par_iter().for_each(|directory| {
         let output_filepath = _get_output_filepath(params, directory, RAR_EXTENSION);
         let output_filename = output_filepath.file_name().unwrap().to_string_lossy();
-        bar.set_message(format!("Compressing {}", &output_filename));
+        bar.set_message(format!("Compressing {}", output_filename));
 
         let mut args = ["a", "-r", "-m5", "--"]
             .iter()
@@ -170,12 +170,12 @@ fn compress_rar(
             Ok(Some(0)) => {
                 let mut success_files = success_files.lock().unwrap();
                 success_files.insert(output_filename.to_string(), false);
-                bar.set_message(format!("Compressed {}!", &output_filename));
+                bar.set_message(format!("Compressed {}!", output_filename));
             }
             _ => {
                 let mut error_files = error_files.lock().unwrap();
                 error_files.push(output_filename.to_string());
-                bar.set_message(format!("Failed to compress {}!", &output_filename));
+                bar.set_message(format!("Failed to compress {}!", output_filename));
             }
         };
 
@@ -202,7 +202,7 @@ fn compress_zip(
     for directory in directories {
         let output_filepath = _get_output_filepath(params, directory, ZIP_EXTENSION);
         let output_filename = output_filepath.file_name().unwrap().to_string_lossy();
-        bar.set_message(format!("Compressing {}", &output_filename));
+        bar.set_message(format!("Compressing {}", output_filename));
 
         let output_file = match File::create(&output_filepath) {
             Ok(v) => v,
